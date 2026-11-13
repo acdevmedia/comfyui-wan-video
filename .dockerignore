@@ -1,0 +1,10 @@
+*
+!Dockerfile
+!scripts/
+!scripts/**
+!custom_nodes/
+!custom_nodes/**
+!versions/
+!versions/**
+versions/*/upstream/
+**/__pycache__/

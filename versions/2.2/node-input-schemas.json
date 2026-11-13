@@ -1,0 +1,211 @@
+{
+  "CFGGuider": {
+    "allowed": [
+      "cfg",
+      "model",
+      "negative",
+      "positive"
+    ],
+    "required": [
+      "cfg",
+      "model",
+      "negative",
+      "positive"
+    ]
+  },
+  "CLIPLoader": {
+    "allowed": [
+      "clip_name",
+      "device",
+      "type"
+    ],
+    "required": [
+      "clip_name",
+      "type"
+    ]
+  },
+  "CLIPTextEncode": {
+    "allowed": [
+      "clip",
+      "text"
+    ],
+    "required": [
+      "clip",
+      "text"
+    ]
+  },
+  "CreateVideo": {
+    "allowed": [
+      "audio",
+      "bit_depth",
+      "chroma_subsampling",
+      "codec",
+      "color_space",
+      "fps",
+      "images"
+    ],
+    "required": [
+      "fps",
+      "images"
+    ]
+  },
+  "DisableNoise": {
+    "allowed": [],
+    "required": []
+  },
+  "KSamplerAdvanced": {
+    "allowed": [
+      "add_noise",
+      "cfg",
+      "end_at_step",
+      "latent_image",
+      "model",
+      "negative",
+      "noise_seed",
+      "positive",
+      "return_with_leftover_noise",
+      "sampler_name",
+      "scheduler",
+      "start_at_step",
+      "steps"
+    ],
+    "required": [
+      "add_noise",
+      "cfg",
+      "end_at_step",
+      "latent_image",
+      "model",
+      "negative",
+      "noise_seed",
+      "positive",
+      "return_with_leftover_noise",
+      "sampler_name",
+      "scheduler",
+      "start_at_step",
+      "steps"
+    ]
+  },
+  "KSamplerSelect": {
+    "allowed": [
+      "sampler_name"
+    ],
+    "required": [
+      "sampler_name"
+    ]
+  },
+  "LoadImage": {
+    "allowed": [
+      "image"
+    ],
+    "required": [
+      "image"
+    ]
+  },
+  "LoraLoaderModelOnly": {
+    "allowed": [
+      "lora_name",
+      "model",
+      "strength_model"
+    ],
+    "required": [
+      "lora_name",
+      "model",
+      "strength_model"
+    ]
+  },
+  "ModelSamplingSD3": {
+    "allowed": [
+      "model",
+      "shift"
+    ],
+    "required": [
+      "model",
+      "shift"
+    ]
+  },
+  "RandomNoise": {
+    "allowed": [
+      "noise_seed"
+    ],
+    "required": [
+      "noise_seed"
+    ]
+  },
+  "SamplerCustomAdvanced": {
+    "allowed": [
+      "guider",
+      "latent_image",
+      "noise",
+      "sampler",
+      "sigmas"
+    ],
+    "required": [
+      "guider",
+      "latent_image",
+      "noise",
+      "sampler",
+      "sigmas"
+    ]
+  },
+  "SplitSigmas": {
+    "allowed": [
+      "sigmas",
+      "step"
+    ],
+    "required": [
+      "sigmas",
+      "step"
+    ]
+  },
+  "UNETLoader": {
+    "allowed": [
+      "unet_name",
+      "weight_dtype"
+    ],
+    "required": [
+      "unet_name",
+      "weight_dtype"
+    ]
+  },
+  "VAEDecode": {
+    "allowed": [
+      "samples",
+      "vae"
+    ],
+    "required": [
+      "samples",
+      "vae"
+    ]
+  },
+  "VAELoader": {
+    "allowed": [
+      "vae_name"
+    ],
+    "required": [
+      "vae_name"
+    ]
+  },
+  "WanImageToVideo": {
+    "allowed": [
+      "batch_size",
+      "clip_vision_output",
+      "height",
+      "length",
+      "negative",
+      "positive",
+      "ref_pad_image",
+      "start_image",
+      "vae",
+      "width"
+    ],
+    "required": [
+      "batch_size",
+      "height",
+      "length",
+      "negative",
+      "positive",
+      "vae",
+      "width"
+    ]
+  }
+}

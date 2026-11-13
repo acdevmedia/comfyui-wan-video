@@ -1,0 +1,100 @@
+{
+  "version": "2.2",
+  "bundle_version": "0.1.0",
+  "default_mode": "turbo",
+  "comfy_commit": "46659e65e95920e5d29cae011b43b02699c0bfd3",
+  "models": [
+    {
+      "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+      "directory": "diffusion_models",
+      "size": 14294742832,
+      "sha256": "6122e79d55e0f235698d11d657f3b196c5273c830da00b2b013c5a048d5e6a42",
+      "modes": [
+        "standard",
+        "turbo"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "directory": "diffusion_models",
+      "size": 14294742832,
+      "sha256": "5471a457b6ac404202a5fbe6c11595a3d5641fc766b00f38763f72303fffc21e",
+      "modes": [
+        "standard",
+        "turbo"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "directory": "text_encoders",
+      "size": 6735906897,
+      "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/vae/wan_2.1_vae.safetensors",
+      "directory": "vae",
+      "size": 253815318,
+      "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "repo": "lightx2v/Wan2.2-Distill-Loras",
+      "revision": "57adea585d1d21085e2dfc91ce3c7b646cdd9345",
+      "file": "wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+      "directory": "loras",
+      "size": 634645944,
+      "sha256": "887c3bdeb74e83859c920438e16ca31f39ab18ce189abc5f0e36f8348c5bbb19",
+      "modes": [
+        "turbo"
+      ]
+    },
+    {
+      "repo": "lightx2v/Wan2.2-Distill-Loras",
+      "revision": "57adea585d1d21085e2dfc91ce3c7b646cdd9345",
+      "file": "wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
+      "directory": "loras",
+      "size": 739472104,
+      "sha256": "8833bd4fd7c8eabebf0bc8ee5cfaf47f4f310ce116928a02c1adf8941dd4b0f1",
+      "modes": [
+        "turbo"
+      ]
+    },
+    {
+      "repo": "FX-FeiHou/wan2.2-Remix",
+      "revision": "4369125a0f1157c6b8768df18b7e81bacd5fdc1f",
+      "file": "NSFW/Wan2.2_Remix_NSFW_i2v_14b_high_lighting_fp8_e4m3fn_v3.0.safetensors",
+      "directory": "diffusion_models",
+      "size": 14291272136,
+      "sha256": "2ac60c97ca6911090cdbdf055b685af3646b7bd93c19c9aae0f86f4ea018e97d",
+      "modes": [
+        "remix"
+      ]
+    },
+    {
+      "repo": "FX-FeiHou/wan2.2-Remix",
+      "revision": "4369125a0f1157c6b8768df18b7e81bacd5fdc1f",
+      "file": "NSFW/Wan2.2_Remix_NSFW_i2v_14b_low_lighting_fp8_e4m3fn_v3.0.safetensors",
+      "directory": "diffusion_models",
+      "size": 14291272136,
+      "sha256": "a239063c377e530229c4e5b1fecdcbe9de1201a30126dd42297435287e713229",
+      "modes": [
+        "remix"
+      ]
+    }
+  ],
+  "attention": "pytorch",
+  "validation": "Source checks only; Docker build and GPU generation pending."
+}

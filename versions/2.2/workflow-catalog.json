@@ -1,0 +1,23 @@
+[
+  {
+    "name": "2.2_standard_i2v",
+    "mode": "standard",
+    "ui": "workflows/2.2_standard_i2v.json",
+    "api": "api/2.2_standard_i2v.json",
+    "experimental": false
+  },
+  {
+    "name": "2.2_turbo_i2v",
+    "mode": "turbo",
+    "ui": "workflows/2.2_turbo_i2v.json",
+    "api": "api/2.2_turbo_i2v.json",
+    "experimental": false
+  },
+  {
+    "name": "2.2_remix_i2v",
+    "mode": "remix",
+    "ui": "workflows/2.2_remix_i2v.json",
+    "api": "api/2.2_remix_i2v.json",
+    "experimental": true
+  }
+]
