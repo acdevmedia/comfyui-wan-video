@@ -14,6 +14,8 @@ payload=json.loads((ROOT/'config/runpod-template.json').read_text());payload['im
 archive=out/(repo.split('/')[-1]+'-'+tag+'-workflows.zip')
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for path in sorted((ROOT/'versions'/version).rglob('*.json')):z.write(path,path.relative_to(ROOT))
+ for path in sorted((ROOT/'.runpod').glob('*')):
+  if path.is_file():z.write(path,path.relative_to(ROOT))
  for path in [ROOT/'README.md',ROOT/'docs/research.md']:z.write(path,path.relative_to(ROOT))
  z.write(out/'runpod-template.json','runpod-template.json')
 notes=f"# Video bundle {tag}\n\nModel profile: {version}. Container: `{image}`.\n\nContainer installation, live ComfyUI API schemas and authenticated output downloads are CPU-smoke-tested before this release is published. GPU generation and performance remain unvalidated; do not infer GPU quality or compatibility from CPU tests.\n\nRunpod payload is private by default until validated; Hub publication is a separate operation. No model weights or credentials are included.\n"

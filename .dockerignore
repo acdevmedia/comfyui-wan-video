@@ -8,3 +8,6 @@
 !versions/**
 versions/*/upstream/
 **/__pycache__/
+
+!.runpod/
+!.runpod/handler.py

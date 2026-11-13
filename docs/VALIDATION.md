@@ -11,3 +11,5 @@ Also passed locally: Video controls are deterministic and the separate seed node
 Not run: Docker image build, image-time ComfyUI schema smoke test, authenticated Copyparty integration test, frontend browser import/playback, actual model loading, Runpod deployment, GPU generation, peak VRAM, timing, reference fidelity and H3 audio synchronization. CI definitions for image build/schema/file-browser tests are included, but this is not a record that CI passed. No model weights were downloaded locally.
 
 Before deployment, run the image checks and the generation/restart matrix in research.md. Use separate measured results for standard H3, each H3 turbo, Eros beta7 fix1, standard WAN, WAN turbo and Remix v3. No benchmark or compatibility claim transfers automatically between them.
+
+First GitHub image build: installation and all live ComfyUI API schema checks passed. The output-download smoke test then caught a missing `unzip` executable. The Dockerfile now installs zip/unzip; a candidate rebuild must pass the entire test sequence before release publication.

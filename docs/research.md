@@ -38,4 +38,4 @@ For I2V, start with **subject action, camera movement, environment response and 
 
 ## Deployment gate
 
-These directories contain source bundles, local template payloads, CI build/publish definitions, CPU source tests and an image-time live node-schema smoke test. They do not yet have Git remotes, published container images, live Runpod templates or GPU performance results. CI must build the image, start ComfyUI in CPU mode, validate every API graph against live node schemas and check the authenticated file browser before publishing. A real Runpod generation remains necessary after that. Do not point users at an unbuilt image tag or describe these bundles as production validated.
+These repositories now have Git remotes, container build/publish automation, versioned release assets and Hub configuration. Current build results are recorded in VALIDATION.md. CPU installation/schema checks do not establish GPU generation quality or peak memory. Runpod Hub submission and public template publication are deferred until GPU tests pass. The Hub readiness check only verifies that ComfyUI starts after provisioning; it does not generate a video.

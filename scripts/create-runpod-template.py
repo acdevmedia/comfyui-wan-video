@@ -4,9 +4,13 @@ import argparse,json,os,urllib.request
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--apply',action='store_true');p.add_argument('--image',help='Published image digest or tested tag');args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--apply',action='store_true');p.add_argument('--registry-auth-id',help='Existing Runpod registry authorization for a private test template');p.add_argument('--public',action='store_true',help='Publish the template to Runpod Explore');p.add_argument('--image',help='Published image digest or tested tag');args=p.parse_args()
     payload=json.loads((ROOT/'config/runpod-template.json').read_text())
     if args.image:payload['imageName']=args.image
+    if args.public:payload['isPublic']=True
+    if args.registry_auth_id:
+        if args.public:raise SystemExit('Public templates must use an anonymously pullable image')
+        payload['containerRegistryAuthId']=args.registry_auth_id
     payload['readme']=(ROOT/'README.md').read_text()
     if not args.apply:print(json.dumps(payload,indent=2));return
     if not args.image:raise SystemExit('--apply requires --image naming an already published and tested image')

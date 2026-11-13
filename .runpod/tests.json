@@ -1,0 +1,56 @@
+{
+  "tests": [
+    {
+      "name": "comfyui_readiness",
+      "input": {
+        "healthcheck": true
+      },
+      "timeout": 1800000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA A100 80GB PCIe",
+    "gpuCount": 1,
+    "allowedCudaVersions": [
+      "13.0"
+    ],
+    "env": [
+      {
+        "key": "VIDEO_VERSION",
+        "value": "2.2"
+      },
+      {
+        "key": "MODEL_MODE",
+        "value": "turbo"
+      },
+      {
+        "key": "COMFYUI_ATTENTION",
+        "value": "pytorch"
+      },
+      {
+        "key": "HF_HOME",
+        "value": "/workspace/.cache/huggingface"
+      },
+      {
+        "key": "COPYPARTY_USERNAME",
+        "value": "{{ RUNPOD_SECRET_COPYPARTY_USERNAME }}"
+      },
+      {
+        "key": "COPYPARTY_PASSWORD",
+        "value": "{{ RUNPOD_SECRET_COPYPARTY_SECRET }}"
+      },
+      {
+        "key": "HF_TOKEN",
+        "value": "{{ RUNPOD_SECRET_HUGGINGFACE_TOKEN }}"
+      },
+      {
+        "key": "PORT",
+        "value": "8000"
+      },
+      {
+        "key": "PORT_HEALTH",
+        "value": "8001"
+      }
+    ]
+  }
+}

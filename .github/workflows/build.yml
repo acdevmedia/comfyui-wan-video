@@ -16,6 +16,7 @@ jobs:
       - name: Source checks
         run: |
           python3 tests/test-bundle.py
+          python3 tests/test-hub.py
           bash tests/test-cpu-threads.sh
           python3 scripts/build-workflows.py
           # Also catches newly generated files that were never committed.
@@ -33,7 +34,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and run CPU schema smoke test
         run: |
-          docker buildx build --load -t video-bundle:test .
+          docker buildx build --load --label "org.opencontainers.image.revision=$GITHUB_SHA" -t video-bundle:test .
           docker run --rm --entrypoint python3 video-bundle:test /opt/video/scripts/smoke-schemas.py
           docker run --rm --entrypoint bash video-bundle:test /opt/video/scripts/test-copyparty.sh
       - name: Publish tested image
@@ -55,5 +56,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/package-release.py
-          gh release create "$GITHUB_REF_NAME" dist/* --title "Video bundle $GITHUB_REF_NAME" --notes-file dist/RELEASE.md
+          release_args=()
+          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then release_args+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Video bundle $GITHUB_REF_NAME" --notes-file dist/RELEASE.md "${release_args[@]}"
 
