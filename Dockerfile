@@ -6,6 +6,9 @@ ENV DEBIAN_FRONTEND=noninteractive PATH=/opt/venv/bin:$PATH VIDEO_VERSION=2.2 MO
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv git curl ca-certificates ffmpeg libgl1 libglib2.0-0 tini util-linux zip unzip gcc libc6-dev python3-dev && rm -rf /var/lib/apt/lists/* && python3 -m venv /opt/venv
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu130 torch==2.11.0 torchvision==0.26.0 torchaudio==2.11.0
 RUN mkdir /opt/ComfyUI && curl -fsSL https://github.com/Comfy-Org/ComfyUI/archive/46659e65e95920e5d29cae011b43b02699c0bfd3.tar.gz | tar xz --strip-components=1 -C /opt/ComfyUI && pip install --no-cache-dir -r /opt/ComfyUI/requirements.txt huggingface_hub==2.3.0 copyparty==1.20.26 sageattention==1.0.6 && pip check && python3 -c 'import hf_xet, sageattention, triton' && pip freeze > /opt/python-lock.txt
+# Isolate AWS CLI dependencies from the ComfyUI environment.
+RUN python3 -m venv /opt/awscli && /opt/awscli/bin/pip install --no-cache-dir 'awscli==1.46.3' && \
+    ln -s /opt/awscli/bin/aws /usr/local/bin/aws && aws --version
 COPY scripts /opt/video/scripts
 COPY versions /opt/video/versions
 COPY custom_nodes/acdev_video /opt/ComfyUI/custom_nodes/acdev_video

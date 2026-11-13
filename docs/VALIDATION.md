@@ -13,3 +13,5 @@ Not run: Docker image build, image-time ComfyUI schema smoke test, authenticated
 Before deployment, run the image checks and the generation/restart matrix in research.md. Use separate measured results for standard H3, each H3 turbo, Eros beta7 fix1, standard WAN, WAN turbo and Remix v3. No benchmark or compatibility claim transfers automatically between them.
 
 First GitHub image build: installation and all live ComfyUI API schema checks passed. The output-download smoke test then caught a missing `unzip` executable. The Dockerfile now installs zip/unzip; a candidate rebuild must pass the entire test sequence before release publication.
+
+Candidate rc.1 passed image installation and live ComfyUI schema checks, then the copied output-download test found the missing AWS CLI. Candidate rc.2 adds pinned awscli 1.46.3 in its own virtual environment to both images, checks `aws --version` during the build and in the download smoke test, and is queued for a full rebuild. GPU tests and Hub submission remain deferred.

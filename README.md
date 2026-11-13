@@ -41,6 +41,6 @@ Pushes to `main` build and CPU-smoke-test containers before publishing model-ver
 
 Runpod Hub publication uses the released image after image smoke checks. GPU quality and performance require separate Runpod generation tests. See release notes for the exact validation scope.
 
-Initial test releases use `v0.1.0-rc.1` and are marked prerelease. Hub submission and public Pod template publication wait for GPU tests. The `.runpod` files are prepared for that later submission.
+Initial test releases use `v0.1.0-rc.2` and are marked prerelease. Hub submission and public Pod template publication wait for GPU tests. The `.runpod` files are prepared for that later submission.
 
 For private test Pods, the template tool accepts `--registry-auth-id` pointing to an existing Runpod GHCR authorization. Before public Hub submission, make the GHCR package public and verify an anonymous pull; never embed registry passwords or tokens in Hub files.

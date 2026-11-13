@@ -58,4 +58,5 @@ refused "$(code -X POST "$url/keep.txt?delete" "${login[@]}")" || fail 'delete a
 [[ -e "$fixture/output/keep.txt" && ! -e "$fixture/output/new.txt" ]] || fail 'files changed'
 [[ ! -e "$fixture/output/.hist" ]] || fail 'thumbnails landed in the output folder'
 command -v zip >/dev/null && command -v aws >/dev/null || fail 'zip or aws is missing'
+aws --version >/dev/null || fail 'aws CLI cannot start'
 echo 'PASS: copyparty needs both username and password and serves read-only galleries and ZIPs; zip, unzip and aws are installed.'
