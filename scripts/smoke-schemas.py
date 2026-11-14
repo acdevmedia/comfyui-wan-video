@@ -3,7 +3,8 @@
 import json,os,subprocess,time,urllib.request
 from pathlib import Path
 # Same --base-directory layout as start.sh, so a missing custom_nodes link fails here, not on a GPU.
-base=Path('/tmp/smoke-base');(base/'custom_nodes').mkdir(parents=True,exist_ok=True)
+base=Path('/tmp/smoke-base')
+for sub in ('custom_nodes','models','input','output','user'):(base/sub).mkdir(parents=True,exist_ok=True)
 for node in Path('/opt/ComfyUI/custom_nodes').iterdir():
  if node.is_dir():
   link=base/'custom_nodes'/node.name
