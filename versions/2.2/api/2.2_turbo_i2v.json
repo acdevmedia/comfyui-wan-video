@@ -5,9 +5,7 @@
       "family": "wan",
       "width": 832,
       "height": 480,
-      "length_mode": "duration",
       "duration": 5.0,
-      "num_frames": 81,
       "prompt": "A cinematic shot. The subject moves naturally as the camera slowly tracks forward.",
       "negative_prompt": "low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts"
     },
@@ -379,7 +377,7 @@
         "25",
         0
       ],
-      "filename_prefix": "video/2.2/turbo",
+      "filename_prefix": "video/2.2/turbo/i2v",
       "seed": [
         "3",
         0

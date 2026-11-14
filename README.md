@@ -1,10 +1,10 @@
 # WAN 2.2 I2V-A14B ComfyUI Runpod bundle
 
-Version profile: `versions/2.2/`. Bundle revision: `0.1.0`. Proposed image: `ghcr.io/acdevmedia/wan-comfyui:2.2`. **Source-ready; image build, Runpod deployment and GPU generation are pending.**
+Version profile: `versions/2.2/`. Bundle revision: `0.1.0`. Container image: `ghcr.io/acdevmedia/wan-comfyui:2.2`. **Container build and CPU smoke tests passed for v0.1.0-rc.2. GPU generation remains pending.**
 
-Available modes: standard (20 steps), turbo (four steps with matched high/low LightX2V adapters), remix (v3.0 checkpoints; experimental 12-step publisher-example schedule). Default: `turbo`. Use `MODEL_MODE=all` only when you want every workflow and its model downloads. Normal selected-mode downloads are approximately 36–42 GB, depending on the family and mode.
+Available modes: standard (20 steps), turbo (four steps with matched high/low LightX2V adapters), remix (v3.0 checkpoints; experimental 12-step publisher-example schedule). Default: `all`: every workflow (each mode, image-to-video and text-to-video) is installed and its weights downloaded, about 97 GB. Set `MODEL_MODE` to a single mode for a smaller download (about 36–42 GB) and only that mode's workflows.
 
-All workflows include one Video controls node: editable width/height, duration or frame count, positive prompt, and a prefilled editable negative prompt. Seeds randomize in the backend on every queued job, including API jobs, and the actual seed is saved in MP4 metadata. Turbo/Remix CFG 1 omits negative guidance; the workflow labels this. Standard CFG enables it and requires quality validation.
+Each workflow shows three nodes: the reference image (image-to-video only), one **Generate video** node with prompt, negative prompt, width, height and duration in seconds, and the MP4 saver. Model loading, sampling and decoding sit inside that node's subgraph (double-click it to inspect or edit). Seeds randomize in the backend on every queued job, including API jobs, and the actual seed is saved in MP4 metadata. Turbo/Remix CFG 1 omits negative guidance; the workflow labels this. Standard CFG enables it and requires quality validation.
 
 WAN uses 16 fps with `4k+1` frames; H3 uses 24 fps with `17k+5`. A five-second request rounds up to 81 / 124 frames respectively. Dimensions must be multiples of 32. Upload your own reference image into Load Image before queueing; `reference.png` is a placeholder, not a packaged asset. H3 also generates audio from the positive prompt. The Videos & Audio button opens recent outputs inside ComfyUI.
 
@@ -44,3 +44,5 @@ Runpod Hub publication uses the released image after image smoke checks. GPU qua
 Initial test releases use `v0.1.0-rc.2` and are marked prerelease. Hub submission and public Pod template publication wait for GPU tests. The `.runpod` files are prepared for that later submission.
 
 For private test Pods, the template tool accepts `--registry-auth-id` pointing to an existing Runpod GHCR authorization. Before public Hub submission, make the GHCR package public and verify an anonymous pull; never embed registry passwords or tokens in Hub files.
+
+Release candidate: [v0.1.0-rc.2](https://github.com/acdevmedia/comfyui-wan-video/releases/tag/v0.1.0-rc.2). [Container build and CPU smoke results](https://github.com/acdevmedia/comfyui-wan-video/actions/runs/43521502232). A private digest-pinned test template is available; public Hub submission remains deferred.

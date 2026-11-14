@@ -10,9 +10,7 @@ class VideoControls:
             'family': (['wan','h3'],),
             'width': ('INT', {'default':832,'min':64,'max':4096,'step':32}),
             'height': ('INT', {'default':480,'min':64,'max':4096,'step':32}),
-            'length_mode': (['duration','frames'],),
-            'duration': ('FLOAT', {'default':5.0,'min':0.2,'max':15.0,'step':0.1}),
-            'num_frames': ('INT', {'default':81,'min':5,'max':362,'step':1}),
+            'duration': ('FLOAT', {'default':5.0,'min':0.2,'max':15.0,'step':0.1,'tooltip':'Seconds. Rounded up to the model frame grid (WAN 16 fps 4k+1, H3 24 fps 17k+5).'}),
             'prompt': ('STRING', {'default':'A cinematic shot. The subject moves naturally as the camera slowly tracks forward.','multiline':True}),
             'negative_prompt': ('STRING', {'default':NEGATIVE,'multiline':True}),
         }}
@@ -22,17 +20,17 @@ class VideoControls:
     CATEGORY='ACDEV/Video'
     # Deterministic on purpose: unchanged prompts/sizes keep text-encoder and
     # image-encode results cached between jobs. Randomness lives in RandomSeed.
-    def run(self,family,width,height,length_mode,duration,num_frames,prompt,negative_prompt):
-        if family not in ('wan','h3') or length_mode not in ('duration','frames'):
-            raise ValueError('Invalid video family or length mode')
+    def run(self,family,width,height,duration,prompt,negative_prompt):
+        if family not in ('wan','h3'):
+            raise ValueError('Invalid video family')
         if width%32 or height%32 or not 64<=width<=4096 or not 64<=height<=4096:
             raise ValueError('Dimensions must be multiples of 32, between 64 and 4096')
         fps=24.0 if family=='h3' else 16.0
         grid,offset,maximum=(17,5,362) if family=='h3' else (4,1,241)
-        requested=math.ceil(duration*fps) if length_mode=='duration' else num_frames
+        requested=math.ceil(round(duration*fps,6))
         frames=offset+max(0,math.ceil((requested-offset)/grid))*grid
         if not 5<=frames<=maximum:
-            raise ValueError(f'Request is outside the supported frame range (max {maximum})')
+            raise ValueError(f'Duration is outside the supported range (max {maximum} frames, {maximum/fps:.2f}s)')
         print(f'[video] {width}x{height}, {frames} frames, {frames/fps:.3f}s at {fps:g}fps')
         return width,height,frames,fps,prompt,negative_prompt
 

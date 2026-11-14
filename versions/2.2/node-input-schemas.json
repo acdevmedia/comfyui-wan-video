@@ -207,5 +207,19 @@
       "vae",
       "width"
     ]
+  },
+  "EmptyHunyuanLatentVideo": {
+    "allowed": [
+      "width",
+      "height",
+      "length",
+      "batch_size"
+    ],
+    "required": [
+      "width",
+      "height",
+      "length",
+      "batch_size"
+    ]
   }
 }

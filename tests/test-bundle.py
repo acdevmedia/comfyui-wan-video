@@ -3,16 +3,38 @@ import importlib.util,json,math,re,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('video',ROOT/'custom_nodes/acdev_video/__init__.py');video=importlib.util.module_from_spec(spec);spec.loader.exec_module(video)
+def flatten(ui):
+ """Expand the single subgraph back into the flat graph ComfyUI executes."""
+ (sg,)=ui['definitions']['subgraphs'];(outer,)=[n for n in ui['nodes'] if n['type']==sg['id']]
+ nodes={n['id']:n for n in ui['nodes'] if n is not outer};nodes.update({n['id']:n for n in sg['nodes']})
+ top={l[0]:l for l in ui['links']};inner={l['id']:l for l in sg['links']};edges=set();promoted={}
+ def name_of(node,slot):return node['inputs'][slot]['name']
+ for l in sg['links']:
+  if l['target_id']==-20:continue
+  if l['origin_id']==-10:
+   src=outer['inputs'][l['origin_slot']]
+   if src['link'] is None:  # promoted widget: value lives on the outer node
+    widgets=[i for i in outer['inputs'] if i.get('widget')];promoted[src['name']]=outer['widgets_values'][widgets.index(src)];continue
+   t=top[src['link']];edges.add((t[1],t[2],l['target_id'],name_of(nodes[l['target_id']],l['target_slot'])))
+  else:edges.add((l['origin_id'],l['origin_slot'],l['target_id'],name_of(nodes[l['target_id']],l['target_slot'])))
+ for t in ui['links']:
+  if t[1]==outer['id']:
+   (o,)=[inner[i] for i in sg['outputs'][t[2]]['linkIds']];edges.add((o['origin_id'],o['origin_slot'],t[3],name_of(nodes[t[3]],t[4])))
+  elif t[3]!=outer['id']:edges.add((t[1],t[2],t[3],name_of(nodes[t[3]],t[4])))
+ for n in sg['nodes']:  # every inner link id must be listed on both ends
+  for i in n['inputs']:
+   if i['link'] is not None:assert inner[i['link']]['target_id']==n['id']
+ return nodes,edges,promoted
 class BundleTests(unittest.TestCase):
  def test_controls(self):
-  c=video.VideoControls()
-  for family,expected,fps in [('wan',81,16),('h3',124,24)]:
-   args=dict(family=family,width=832,height=480,length_mode='duration',duration=5,num_frames=81,prompt='test',negative_prompt='bad')
+  c=video.VideoControls();self.assertNotIn('num_frames',c.INPUT_TYPES()['required']);self.assertNotIn('length_mode',c.INPUT_TYPES()['required'])
+  for family,expected,fps,longest in [('wan',81,16,241),('h3',124,24,362)]:
+   args=dict(family=family,width=832,height=480,duration=5,prompt='test',negative_prompt='bad')
    a=c.run(**args);b=c.run(**args)
    self.assertEqual(a[2:6],(expected,float(fps),'test','bad'));self.assertEqual(a,b);self.assertFalse(hasattr(c,'IS_CHANGED'))
-   args.update(length_mode='frames',num_frames=82);self.assertEqual(c.run(**args)[2],85 if family=='wan' else 90)
+   self.assertEqual(c.run(**{**args,'duration':15})[2],longest)
+   self.assertEqual(c.run(**{**args,'duration':0.2})[2],5)  # tiny requests snap up to the minimum
    with self.assertRaises(ValueError):c.run(**{**args,'width':833})
-   with self.assertRaises(ValueError):c.run(**{**args,'num_frames':999})
  def test_random_seed(self):
   r=video.RandomSeed();self.assertNotEqual(r.run(),r.run());self.assertTrue(math.isnan(r.IS_CHANGED()))
  def test_manifests_and_graphs(self):
@@ -23,31 +45,40 @@ class BundleTests(unittest.TestCase):
    for m in p['models']:
     self.assertRegex(m['revision'],r'^[0-9a-f]{40}$');self.assertRegex(m['sha256'],r'^[0-9a-f]{64}$');self.assertGreater(m['size'],0)
    for item in json.loads((v/'workflow-catalog.json').read_text()):
-    api=json.loads((v/item['api']).read_text());ui=json.loads((v/item['ui']).read_text());nodes={n['id']:n for n in ui['nodes']}
+    api=json.loads((v/item['api']).read_text());ui=json.loads((v/item['ui']).read_text());nodes,edges,promoted=flatten(ui)
     controls=[k for k,n in api.items() if n['class_type']=='ACDEVVideoControls'];self.assertEqual(len(controls),1);control=controls[0]
     self.assertTrue(api[control]['inputs']['negative_prompt'])
     seeds=[k for k,n in api.items() if n['class_type']=='ACDEVRandomSeed'];self.assertEqual(len(seeds),1);seed=seeds[0]
-    self.assertEqual(len(api),len(nodes))
+    self.assertEqual(sorted(map(int,api)),sorted(nodes))
+    self.assertEqual(edges,{(int(v_[0]),v_[1],int(k),name) for k,n in api.items() for name,v_ in n['inputs'].items() if isinstance(v_,list)})
+    self.assertEqual(promoted,{w:api[control]['inputs'][w] for w in ('prompt','negative_prompt','width','height','duration')})
+    visible=[n['type'] for n in ui['nodes']];self.assertEqual(len(visible),3 if item['task']=='i2v' else 2,visible)
     for k,n in api.items():
      self.assertEqual(n['class_type'],nodes[int(k)]['type'])
      if n['class_type'] in schemas:
       schema=schemas[n['class_type']];self.assertLessEqual(set(schema['required']),set(n['inputs']));self.assertLessEqual(set(n['inputs']),set(schema['allowed']))
      for name,value in n['inputs'].items():
-      if isinstance(value,list):
-       source=nodes[int(value[0])];self.assertLess(value[1],len(source['outputs']))
-       match=next(i for i in nodes[int(k)]['inputs'] if i['name']==name);link=next(l for l in ui['links'] if l[0]==match['link']);self.assertEqual(link[1:4],[int(value[0]),value[1],int(k)])
+      if isinstance(value,list):self.assertLess(value[1],len(nodes[int(value[0])]['outputs']))
       elif name in ('unet_name','clip_name','vae_name','lora_name'):self.assertIn(value,names)
      if n['class_type'] in ('RandomNoise','KSamplerAdvanced'):self.assertEqual(n['inputs']['noise_seed'],[seed,0])
      if n['class_type']=='ACDEVSaveVideo':self.assertEqual(n['inputs']['seed'],[seed,0])
+    top={n['id']:n for n in ui['nodes']};sg=ui['definitions']['subgraphs'][0];inn={n['id']:n for n in sg['nodes']}
     for l in ui['links']:
-     self.assertIn(l[0],nodes[l[1]]['outputs'][l[2]]['links']);self.assertEqual(nodes[l[3]]['inputs'][l[4]]['link'],l[0])
+     self.assertIn(l[0],top[l[1]]['outputs'][l[2]]['links']);self.assertEqual(top[l[3]]['inputs'][l[4]]['link'],l[0])
+    for l in sg['links']:
+     if l['origin_id']==-10:self.assertIn(l['id'],sg['inputs'][l['origin_slot']]['linkIds'])
+     else:self.assertIn(l['id'],inn[l['origin_id']]['outputs'][l['origin_slot']]['links'])
+     if l['target_id']==-20:self.assertIn(l['id'],sg['outputs'][l['target_slot']]['linkIds'])
+     else:self.assertEqual(inn[l['target_id']]['inputs'][l['target_slot']]['link'],l['id'])
+    ids=[n['id'] for n in ui['nodes']]+list(inn);self.assertEqual(len(ids),len(set(ids)))
+    lids=[l[0] for l in ui['links']]+[l['id'] for l in sg['links']];self.assertEqual(len(lids),len(set(lids)));self.assertLessEqual(max(lids),ui['last_link_id'])
     if item['mode'] in ('eros','remix'):self.assertFalse(any(n['class_type']=='LoraLoaderModelOnly' for n in api.values()))
     # Only the seed node may be uncached; everything else must be reusable between jobs.
     for k,n in api.items():
-     if n['class_type'] in ('CLIPTextEncode','WanImageToVideo','MiniMaxH3ImageToVideo'):self.assertNotIn(seed,json.dumps(n['inputs']))
+     if n['class_type'] in ('CLIPTextEncode','WanImageToVideo','MiniMaxH3ImageToVideo'):self.assertFalse(any(isinstance(value,list) and value[0]==seed for value in n['inputs'].values()))
     # With real CFG the negative must see the reference image too (WAN: WanImageToVideo, H3: keyframed encode).
     for gd in api.values():
-     if gd['class_type'] in ('CFGGuider','KSamplerAdvanced') and gd['inputs']['cfg']>1:
+     if gd['class_type'] in ('CFGGuider','KSamplerAdvanced') and gd['inputs']['cfg']>1 and item.get('task','i2v')=='i2v':
       neg=api[gd['inputs']['negative'][0]]
       self.assertIn(neg['class_type'],('WanImageToVideo','MiniMaxH3ImageToVideo'))
       self.assertIn('LoadImage',[api[v[0]]['class_type'] for v in neg['inputs'].values() if isinstance(v,list)])

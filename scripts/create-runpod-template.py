@@ -17,7 +17,7 @@ def main():
     key=os.environ.get('RUNPOD_API_KEY')
     if not key:raise SystemExit('RUNPOD_API_KEY is required')
     def request(path,method='GET',data=None):
-        req=urllib.request.Request('https://rest.runpod.io/v1'+path,method=method,data=json.dumps(data).encode() if data is not None else None,headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'})
+        req=urllib.request.Request('https://rest.runpod.io/v1'+path,method=method,data=json.dumps(data).encode() if data is not None else None,headers={'Authorization':'Bearer '+key,'Content-Type':'application/json','User-Agent':'curl/8.0'})
         with urllib.request.urlopen(req,timeout=60) as r:return json.load(r)
     matches=[x for x in request('/templates') if x['name']==payload['name']]
     if len(matches)>1:raise SystemExit('Duplicate template names; refusing ambiguous update')

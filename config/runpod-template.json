@@ -1,6 +1,6 @@
 {
   "name": "ACDEV WAN 2.2 I2V 14B ComfyUI Video",
-  "imageName": "ghcr.io/acdevmedia/wan-comfyui:2.2",
+  "imageName": "ghcr.io/acdevmedia/wan-comfyui:v0.1.0-rc.3",
   "containerDiskInGb": 200,
   "volumeInGb": 0,
   "volumeMountPath": "/workspace",
@@ -12,7 +12,7 @@
   ],
   "env": {
     "VIDEO_VERSION": "2.2",
-    "MODEL_MODE": "turbo",
+    "MODEL_MODE": "all",
     "COMFYUI_ATTENTION": "pytorch",
     "HF_HOME": "/workspace/.cache/huggingface",
     "COPYPARTY_USERNAME": "{{ RUNPOD_SECRET_COPYPARTY_USERNAME }}",

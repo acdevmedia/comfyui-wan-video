@@ -2,7 +2,13 @@
 """Build-time live ComfyUI schema validation without downloading model weights."""
 import json,os,subprocess,time,urllib.request
 from pathlib import Path
-p=subprocess.Popen(['python3','/opt/ComfyUI/main.py','--cpu','--listen','127.0.0.1','--port','18188','--disable-auto-launch'])
+# Same --base-directory layout as start.sh, so a missing custom_nodes link fails here, not on a GPU.
+base=Path('/tmp/smoke-base');(base/'custom_nodes').mkdir(parents=True,exist_ok=True)
+for node in Path('/opt/ComfyUI/custom_nodes').iterdir():
+ if node.is_dir():
+  link=base/'custom_nodes'/node.name
+  if not link.exists():link.symlink_to(node)
+p=subprocess.Popen(['python3','/opt/ComfyUI/main.py','--cpu','--listen','127.0.0.1','--port','18188','--disable-auto-launch','--base-directory',str(base)])
 try:
  for _ in range(120):
   if p.poll() is not None:raise SystemExit('ComfyUI exited before becoming ready')
@@ -26,6 +32,7 @@ try:
     elif isinstance(expected,list) and name not in ('unet_name','clip_name','vae_name','lora_name','image'):
      assert value in expected,(path,kind,name,value,expected)
   print('Schema OK:',path.name)
+ assert 'ACDEVVideoControls' in schemas and 'ACDEVSaveVideo' in schemas,'ACDEV custom nodes did not load'
 finally:
  p.terminate()
  try:p.wait(timeout=15)

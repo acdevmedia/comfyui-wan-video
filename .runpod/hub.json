@@ -19,7 +19,7 @@
       },
       {
         "key": "MODEL_MODE",
-        "value": "turbo"
+        "value": "all"
       },
       {
         "key": "COMFYUI_ATTENTION",

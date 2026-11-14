@@ -6,7 +6,10 @@ export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-$OMP_NUM_THREADS}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-$OMP_NUM_THREADS}"
 export TOKENIZERS_PARALLELISM=false
 root="${COMFYUI_DIR:-/workspace/ComfyUI}"
-mkdir -p "$root"/{models,input,output,user}
+mkdir -p "$root"/{models,input,output,user,custom_nodes}
+# --base-directory moves ComfyUI's custom_nodes search path to $root, so expose the
+# image's bundled nodes there (refreshed every boot; user-added nodes are left alone).
+for node in /opt/ComfyUI/custom_nodes/*/; do ln -sfn "${node%/}" "$root/custom_nodes/$(basename "$node")"; done
 # Shared volumes must not have two provisioning processes writing the same weights.
 exec 9>"$root/.video-provision.lock"
 flock 9

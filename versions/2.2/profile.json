@@ -1,7 +1,7 @@
 {
   "version": "2.2",
   "bundle_version": "0.1.0",
-  "default_mode": "turbo",
+  "default_mode": "all",
   "comfy_commit": "46659e65e95920e5d29cae011b43b02699c0bfd3",
   "models": [
     {
@@ -92,6 +92,52 @@
       "sha256": "a239063c377e530229c4e5b1fecdcbe9de1201a30126dd42297435287e713229",
       "modes": [
         "remix"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan-2.2",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",
+      "directory": "diffusion_models",
+      "size": 14293923632,
+      "sha256": "cad711ae211c8b23455ec68cd6a190a33a3d874234a77eb57266d73f8f0e6c9f",
+      "modes": [
+        "t2v",
+        "t2v-turbo"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan-2.2",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/loras/wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors",
+      "directory": "loras",
+      "size": 1226977424,
+      "sha256": "698321cb86bd30c4af06c9b84e656a1048c8cb54e06d50694536fb5de37fde41",
+      "modes": [
+        "t2v-turbo"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan-2.2",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",
+      "directory": "diffusion_models",
+      "size": 14293923632,
+      "sha256": "e71b96d7c82e638694c5e7fb98fac4bfb0e4ddc5fbbb4b1df40da8f0f1278a97",
+      "modes": [
+        "t2v",
+        "t2v-turbo"
+      ]
+    },
+    {
+      "repo": "Comfy-Org/Wan-2.2",
+      "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
+      "file": "split_files/loras/wan2.2_t2v_lightx2v_4steps_lora_v1.1_low_noise.safetensors",
+      "directory": "loras",
+      "size": 1226977424,
+      "sha256": "ec95216e614b3c132c11bfb387b11feedf62163150ccc9068bca8a189771e75a",
+      "modes": [
+        "t2v-turbo"
       ]
     }
   ],
