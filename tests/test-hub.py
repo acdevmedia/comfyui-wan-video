@@ -18,4 +18,12 @@ assert {k:env[k] for k in t['env']}==t['env']
 assert env['PORT']=='8000' and env['PORT_HEALTH']=='8001'
 assert t['volumeInGb']==0 and h['config']['containerDiskInGb']==t['containerDiskInGb']
 assert 'handler.py' in (r/'.runpod/Dockerfile').read_text()
-print('PASS: Hub metadata, test configuration and Pod template stay synchronized')
+import importlib.util
+spec=importlib.util.spec_from_file_location('tpl',r/'scripts/create-runpod-template.py');tpl=importlib.util.module_from_spec(spec);spec.loader.exec_module(tpl)
+repo,tag=tpl.check_image(t['imageName'])  # the template follows the model tag, like LTX and Eros
+assert 'FROM '+t['imageName']+'\n' in (r/'.runpod/Dockerfile').read_text()
+for pinned in (f'ghcr.io/{repo}@sha256:'+'0'*64,f'ghcr.io/{repo}:sha-'+'0'*40,f'ghcr.io/{repo}:latest'):
+    try:tpl.check_image(pinned)
+    except SystemExit:pass
+    else:raise AssertionError('template accepted a frozen image: '+pinned)
+print('PASS: Hub metadata, test configuration and Pod template stay synchronized; template follows the model tag')
