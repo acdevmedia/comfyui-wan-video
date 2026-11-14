@@ -11,20 +11,23 @@ class VideoControls:
             'width': ('INT', {'default':832,'min':64,'max':4096,'step':32}),
             'height': ('INT', {'default':480,'min':64,'max':4096,'step':32}),
             'duration': ('FLOAT', {'default':5.0,'min':0.2,'max':1_000_000.0,'step':0.1,'tooltip':'Seconds, no upper limit. Rounded up to the model frame grid (WAN 16 fps 4k+1, H3 24 fps 17k+5). H3 was trained on ~5-15 s and WAN on ~5 s; longer clips are untested and time/VRAM grow faster than length.'}),
+            'exact_frame': ('BOOLEAN', {'default':False,'tooltip':'With a starting image: off = Width x Height sets the area and the image sets the shape (portraits stay portrait); on = use exactly Width x Height and centre-crop the image.'}),
             'prompt': ('STRING', {'default':'A cinematic shot. The subject moves naturally as the camera slowly tracks forward.','multiline':True}),
             'negative_prompt': ('STRING', {'default':NEGATIVE,'multiline':True}),
-        }}
+        },'optional':{'image':('IMAGE',)}}
     RETURN_TYPES=('INT','INT','INT','FLOAT','STRING','STRING')
     RETURN_NAMES=('width','height','num_frames','fps','prompt','negative_prompt')
     FUNCTION='run'
     CATEGORY='ACDEV/Video'
     # Deterministic on purpose: unchanged prompts/sizes keep text-encoder and
     # image-encode results cached between jobs. Randomness lives in RandomSeed.
-    def run(self,family,width,height,duration,prompt,negative_prompt):
+    def run(self,family,width,height,duration,prompt,negative_prompt,exact_frame=False,image=None):
         if family not in ('wan','h3'):
             raise ValueError('Invalid video family')
         if width%32 or height%32 or not 64<=width<=4096 or not 64<=height<=4096:
             raise ValueError('Dimensions must be multiples of 32, between 64 and 4096')
+        if image is not None and not exact_frame:
+            width,height=fit_frame(width,height,image.shape[2],image.shape[1])
         fps=24.0 if family=='h3' else 16.0
         grid,offset=(17,5) if family=='h3' else (4,1)
         requested=math.ceil(round(duration*fps,6))
@@ -35,6 +38,12 @@ class VideoControls:
         return width,height,frames,fps,prompt,negative_prompt
 
 MAX_SEED=0xffffffffffffffff  # full 64-bit range, same as ComfyUI's KSampler
+
+def fit_frame(width,height,image_width,image_height):
+    """Same rule as the LTX/Eros bundles: keep the requested area, take the image's shape, snap to 32."""
+    area=width*height
+    fit=lambda a,b:max(64,round(math.sqrt(area*a/b)/32)*32)
+    return fit(image_width,image_height),fit(image_height,image_width)
 
 class RandomSeed:
     """Visible seed. web/seed-controls.js (shared with the LTX and Eros bundles) writes a

@@ -5,7 +5,8 @@ def dump(p,d):
 # Schema fragments: required socket names/types and output types. Widget inputs stay
 # in API inputs and widgets_values; linked primitives are converted widgets in UI.
 S={
- 'ACDEVVideoControls':({},['INT','INT','INT','FLOAT','STRING','STRING']),
+ 'ACDEVVideoControls':({'image':'IMAGE'},['INT','INT','INT','FLOAT','STRING','STRING']),
+ 'ImageScale':({'image':'IMAGE'},['IMAGE']),
  'ACDEVRandomSeed':({},['INT']),
  'PrimitiveStringMultiline':({},['STRING']),
  'ACDEVWanTurboSigmas':({},['SIGMAS']),
@@ -46,7 +47,8 @@ class Graph:
     if kind=='LoadImage' and key=='image':widgets.append('image')
     if kind in ('RandomNoise','KSamplerAdvanced') and key in ('noise_seed','seed'):widgets.append('fixed')
   widget_orders={
-   'ACDEVVideoControls':['family','width','height','duration','prompt','negative_prompt'],
+   'ACDEVVideoControls':['family','width','height','duration','exact_frame','prompt','negative_prompt'],
+   'ImageScale':['upscale_method','width','height','crop'],
    'UNETLoader':['unet_name','weight_dtype'],'CLIPLoader':['clip_name','type','device'],'VAELoader':['vae_name'],
    'LoadImage':['image'],'CLIPTextEncode':['text'],'LoraLoaderModelOnly':['lora_name','strength_model'],
    'ModelSamplingSD3':['shift'],'MiniMaxH3SigmaShift':['shift_video','shift_audio'],
@@ -58,7 +60,7 @@ class Graph:
    'BasicScheduler':['scheduler','steps','denoise'],'SplitSigmas':['step'],
    'CreateVideo':['fps','bit_depth','color_space','chroma_subsampling','codec'],
    'ACDEVSaveVideo':['filename_prefix'],'ACDEVRandomSeed':['seed'],'PrimitiveStringMultiline':['value']}
-  defaults={'width':832,'height':480,'length':81,'fps':16.0,'text':'','prompt':'','seed':0,'noise_seed':0,'bit_depth':'auto','color_space':'sRGB','chroma_subsampling':'auto','codec':'none'}
+  defaults={'exact_frame':False,'width':832,'height':480,'length':81,'fps':16.0,'text':'','prompt':'','seed':0,'noise_seed':0,'bit_depth':'auto','color_space':'sRGB','chroma_subsampling':'auto','codec':'none'}
   values=[]
   for key in widget_orders.get(kind,[]):
    val=inputs.get(key,defaults.get(key))
@@ -83,10 +85,10 @@ class Graph:
 OUTSIDE=('PrimitiveStringMultiline','LoadImage','ACDEVSaveVideo')
 # (inner node, widget, label) in panel order; skipped when the node is absent (e.g. WAN).
 PROMOTE=[('ACDEVVideoControls','width','Width'),('ACDEVVideoControls','height','Height'),
- ('ACDEVVideoControls','duration','Duration (seconds)'),('ACDEVRandomSeed','seed','Seed'),
+ ('ACDEVVideoControls','duration','Duration (seconds)'),('ACDEVVideoControls','exact_frame','Exact Frame'),('ACDEVRandomSeed','seed','Seed'),
  ('BasicScheduler','steps','Steps'),('CFGGuider','cfg','CFG'),
  ('ACDEVVideoControls','negative_prompt','Negative prompt (used when CFG > 1)')]
-WIDGET_TYPES={'width':'INT','height':'INT','duration':'FLOAT','seed':'INT','steps':'INT','cfg':'FLOAT','negative_prompt':'STRING'}
+WIDGET_TYPES={'exact_frame':'BOOLEAN','width':'INT','height':'INT','duration':'FLOAT','seed':'INT','steps':'INT','cfg':'FLOAT','negative_prompt':'STRING'}
 LINKED={'STRING':('prompt','Prompt — describe the shot'),'IMAGE':('reference_image','Starting image — upload your own')}
 OUT_NAMES={'VIDEO':'video','INT':'seed'}
 PANELS={'PrimitiveStringMultiline':('01 · Describe your shot','#28524d','#172f2c',[0,100],[480,220]),
@@ -113,6 +115,7 @@ def subgraph_ui(g,name,subgraph_name):
  for kind,w,label in PROMOTE:
   owners=[nodes[i] for i in inner if nodes[i]['type']==kind]
   if not owners:continue
+  if w=='exact_frame' and not any(n['type']=='LoadImage' for n in nodes.values()):continue  # image-to-video only
   (n,)=owners;typ=WIDGET_TYPES[w];value=n['widgets_values'][n['properties']['widget_order'].index(w)]
   slot_=add_input(w,typ,label,True,value);l=lid();sg_inputs[slot_]['linkIds'].append(l)
   n['inputs'].append(dict(name=w,type=typ,widget={'name':w},link=l))
@@ -177,8 +180,9 @@ for project,version,modes in [('WAN-SETUP', '2.2', ['turbo', 't2v-turbo', 'stand
    wan=project=='WAN-SETUP';g=Graph();active=[m for m in profile['models'] if mode in m['modes'] or 'all' in m['modes']]
    def file(d,fragment=''):return next(pathlib.Path(m['file']).name for m in active if m['directory']==d and fragment in m['file'])
    prm=g.add('PrimitiveStringMultiline',dict(value=PROMPT),'01 · Describe your shot')
-   ctrl=g.add('ACDEVVideoControls',dict(family='wan' if wan else 'h3',width=832 if wan else 1024,height=480 if wan else 576,duration=5.0,prompt=prm,negative_prompt='low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts'))
    image=g.add('LoadImage',dict(image='reference.png'),'Starting image') if task=='i2v' else None
+   ctrl=g.add('ACDEVVideoControls',dict(**({'image':image} if image else {}),family='wan' if wan else 'h3',width=832 if wan else 1024,height=480 if wan else 576,duration=5.0,exact_frame=False,prompt=prm,negative_prompt='low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts'))
+   if image:image=g.add('ImageScale',dict(image=image,upscale_method='lanczos',width=ctrl,height=slot(ctrl,1),crop='center'),'Fit starting image to frame')
    # Separate node so only sampling re-runs per job; prompt/image encodes stay cached.
    seed=g.add('ACDEVRandomSeed',dict(seed=0),'Seed')
    clip=g.add('CLIPLoader',dict(clip_name=file('text_encoders'),type='wan' if wan else 'minimax',device='default'))

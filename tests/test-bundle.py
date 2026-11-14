@@ -37,6 +37,13 @@ class BundleTests(unittest.TestCase):
    self.assertEqual(c.run(**{**args,'duration':600})[2]>=600*fps,True)
    self.assertEqual(c.run(**{**args,'duration':0.2})[2],5)  # tiny requests snap up to the minimum
    with self.assertRaises(ValueError):c.run(**{**args,'width':833})
+ def test_exact_frame(self):
+  c=video.VideoControls();img=type('Image',(),{'shape':(1,1920,1080,3)})()  # portrait 9:16 upload
+  args=dict(family='h3',width=1024,height=576,duration=5,prompt='p',negative_prompt='n')
+  self.assertEqual(c.run(**args,image=img)[:2],(576,1024))  # same area, image's shape
+  self.assertEqual(c.run(**args,image=img,exact_frame=True)[:2],(1024,576))  # typed size stands
+  self.assertEqual(c.run(**args)[:2],(1024,576))  # text to video: typed size
+  self.assertEqual(video.fit_frame(1024,576,1600,900),(1024,576))  # matching shape is unchanged
  def test_random_seed(self):
   r=video.RandomSeed();a,b=r.run(0)[0],r.run(0)[0];self.assertNotEqual(a,b);self.assertTrue(0<a<=video.MAX_SEED)
   self.assertEqual(r.run(123),(123,));self.assertTrue(math.isnan(r.IS_CHANGED(seed=0)));self.assertEqual(r.IS_CHANGED(seed=7),7)
@@ -55,7 +62,7 @@ class BundleTests(unittest.TestCase):
     seeds=[k for k,n in api.items() if n['class_type']=='ACDEVRandomSeed'];self.assertEqual(len(seeds),1);seed=seeds[0]
     self.assertEqual(sorted(map(int,api)),sorted(nodes))
     self.assertEqual(edges,{(int(v_[0]),v_[1],int(k),name) for k,n in api.items() for name,v_ in n['inputs'].items() if isinstance(v_,list)})
-    owner={'width':'ACDEVVideoControls','height':'ACDEVVideoControls','duration':'ACDEVVideoControls','negative_prompt':'ACDEVVideoControls','seed':'ACDEVRandomSeed','steps':'BasicScheduler','cfg':'CFGGuider'}
+    owner={**({'exact_frame':'ACDEVVideoControls'} if item['task']=='i2v' else {}),'width':'ACDEVVideoControls','height':'ACDEVVideoControls','duration':'ACDEVVideoControls','negative_prompt':'ACDEVVideoControls','seed':'ACDEVRandomSeed','steps':'BasicScheduler','cfg':'CFGGuider'}
     expected={w:next(n['inputs'][w] for n in api.values() if n['class_type']==c) for w,c in owner.items() if any(n['class_type']==c for n in api.values())}
     self.assertEqual(promoted,expected)  # every Shot settings control drives the value ComfyUI executes
     if 'BasicScheduler' in json.dumps(api):self.assertTrue({'steps','cfg'}<=set(promoted))  # H3 filmmaker controls
@@ -94,7 +101,8 @@ class BundleTests(unittest.TestCase):
      if gd['class_type'] in ('CFGGuider','KSamplerAdvanced') and gd['inputs']['cfg']>1 and item.get('task','i2v')=='i2v':
       neg=api[gd['inputs']['negative'][0]]
       self.assertIn(neg['class_type'],('WanImageToVideo','MiniMaxH3ImageToVideo'))
-      self.assertIn('LoadImage',[api[v[0]]['class_type'] for v in neg['inputs'].values() if isinstance(v,list)])
+      sources=[api[v[0]] for v in neg['inputs'].values() if isinstance(v,list)]
+      self.assertTrue(any(n['class_type']=='LoadImage' or (n['class_type']=='ImageScale' and api[n['inputs']['image'][0]]['class_type']=='LoadImage') for n in sources))  # starting image, possibly fitted to the frame
     if item['task']=='i2v' and 'MiniMaxH3ImageToVideo' in json.dumps(api):  # H3 CFG is user-adjustable, so the negative always carries the image
      for gd in api.values():
       if gd['class_type']=='CFGGuider':

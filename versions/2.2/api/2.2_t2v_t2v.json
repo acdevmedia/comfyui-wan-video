@@ -15,6 +15,7 @@
       "width": 832,
       "height": 480,
       "duration": 5.0,
+      "exact_frame": false,
       "prompt": [
         "1",
         0
