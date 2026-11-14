@@ -1,37 +1,49 @@
 {
   "1": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "A cinematic shot. The subject moves naturally as the camera slowly tracks forward."
+    },
+    "_meta": {
+      "title": "01 \u00b7 Describe your shot"
+    }
+  },
+  "2": {
     "class_type": "ACDEVVideoControls",
     "inputs": {
       "family": "wan",
       "width": 832,
       "height": 480,
       "duration": 5.0,
-      "prompt": "A cinematic shot. The subject moves naturally as the camera slowly tracks forward.",
+      "prompt": [
+        "1",
+        0
+      ],
       "negative_prompt": "low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts"
     },
     "_meta": {
       "title": "ACDEVVideoControls"
     }
   },
-  "2": {
+  "3": {
     "class_type": "LoadImage",
     "inputs": {
       "image": "reference.png"
     },
     "_meta": {
-      "title": "Upload reference image"
+      "title": "Starting image"
     }
   },
-  "3": {
+  "4": {
     "class_type": "ACDEVRandomSeed",
     "inputs": {
       "seed": 0
     },
     "_meta": {
-      "title": "Seed (randomized every job)"
+      "title": "Seed"
     }
   },
-  "4": {
+  "5": {
     "class_type": "CLIPLoader",
     "inputs": {
       "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
@@ -42,7 +54,7 @@
       "title": "CLIPLoader"
     }
   },
-  "5": {
+  "6": {
     "class_type": "VAELoader",
     "inputs": {
       "vae_name": "wan_2.1_vae.safetensors"
@@ -51,15 +63,15 @@
       "title": "VAELoader"
     }
   },
-  "6": {
+  "7": {
     "class_type": "CLIPTextEncode",
     "inputs": {
       "clip": [
-        "4",
+        "5",
         0
       ],
       "text": [
-        "1",
+        "2",
         5
       ]
     },
@@ -67,15 +79,15 @@
       "title": "Negative prompt"
     }
   },
-  "7": {
+  "8": {
     "class_type": "CLIPTextEncode",
     "inputs": {
       "clip": [
-        "4",
+        "5",
         0
       ],
       "text": [
-        "1",
+        "2",
         4
       ]
     },
@@ -83,36 +95,36 @@
       "title": "CLIPTextEncode"
     }
   },
-  "8": {
+  "9": {
     "class_type": "WanImageToVideo",
     "inputs": {
       "positive": [
-        "7",
+        "8",
         0
       ],
       "negative": [
-        "6",
+        "7",
         0
       ],
       "vae": [
-        "5",
+        "6",
         0
       ],
       "width": [
-        "1",
+        "2",
         0
       ],
       "height": [
-        "1",
+        "2",
         1
       ],
       "length": [
-        "1",
+        "2",
         2
       ],
       "batch_size": 1,
       "start_image": [
-        "2",
+        "3",
         0
       ]
     },
@@ -120,7 +132,7 @@
       "title": "WanImageToVideo"
     }
   },
-  "9": {
+  "10": {
     "class_type": "UNETLoader",
     "inputs": {
       "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
@@ -130,11 +142,11 @@
       "title": "UNETLoader"
     }
   },
-  "10": {
+  "11": {
     "class_type": "ModelSamplingSD3",
     "inputs": {
       "model": [
-        "9",
+        "10",
         0
       ],
       "shift": 8.0
@@ -143,7 +155,7 @@
       "title": "ModelSamplingSD3"
     }
   },
-  "11": {
+  "12": {
     "class_type": "UNETLoader",
     "inputs": {
       "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
@@ -153,11 +165,11 @@
       "title": "UNETLoader"
     }
   },
-  "12": {
+  "13": {
     "class_type": "ModelSamplingSD3",
     "inputs": {
       "model": [
-        "11",
+        "12",
         0
       ],
       "shift": 8.0
@@ -166,16 +178,16 @@
       "title": "ModelSamplingSD3"
     }
   },
-  "13": {
+  "14": {
     "class_type": "KSamplerAdvanced",
     "inputs": {
       "model": [
-        "10",
+        "11",
         0
       ],
       "add_noise": "enable",
       "noise_seed": [
-        "3",
+        "4",
         0
       ],
       "steps": 20,
@@ -183,15 +195,15 @@
       "sampler_name": "euler",
       "scheduler": "simple",
       "positive": [
-        "8",
+        "9",
         0
       ],
       "negative": [
-        "8",
+        "9",
         1
       ],
       "latent_image": [
-        "8",
+        "9",
         2
       ],
       "start_at_step": 0,
@@ -202,16 +214,16 @@
       "title": "KSamplerAdvanced"
     }
   },
-  "14": {
+  "15": {
     "class_type": "KSamplerAdvanced",
     "inputs": {
       "model": [
-        "12",
+        "13",
         0
       ],
       "add_noise": "disable",
       "noise_seed": [
-        "3",
+        "4",
         0
       ],
       "steps": 20,
@@ -219,15 +231,15 @@
       "sampler_name": "euler",
       "scheduler": "simple",
       "positive": [
-        "8",
+        "9",
         0
       ],
       "negative": [
-        "8",
+        "9",
         1
       ],
       "latent_image": [
-        "13",
+        "14",
         0
       ],
       "start_at_step": 10,
@@ -238,15 +250,15 @@
       "title": "KSamplerAdvanced"
     }
   },
-  "15": {
+  "16": {
     "class_type": "VAEDecode",
     "inputs": {
       "samples": [
-        "14",
+        "15",
         0
       ],
       "vae": [
-        "5",
+        "6",
         0
       ]
     },
@@ -254,15 +266,15 @@
       "title": "VAEDecode"
     }
   },
-  "16": {
+  "17": {
     "class_type": "CreateVideo",
     "inputs": {
       "images": [
-        "15",
+        "16",
         0
       ],
       "fps": [
-        "1",
+        "2",
         3
       ]
     },
@@ -270,16 +282,16 @@
       "title": "CreateVideo"
     }
   },
-  "17": {
+  "18": {
     "class_type": "ACDEVSaveVideo",
     "inputs": {
       "video": [
-        "16",
+        "17",
         0
       ],
       "filename_prefix": "video/2.2/standard/i2v",
       "seed": [
-        "3",
+        "4",
         0
       ]
     },

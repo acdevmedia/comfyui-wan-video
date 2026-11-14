@@ -37,12 +37,14 @@ class VideoControls:
 MAX_SEED=0xffffffffffffffff  # full 64-bit range, same as ComfyUI's KSampler
 
 class RandomSeed:
-    """Visible seed. The UI randomizes it before every queue (control_after_generate);
-    0, which the shipped API graphs use, draws a fresh 64-bit seed in the backend."""
+    """Visible seed. web/seed-controls.js (shared with the LTX and Eros bundles) writes a
+    new random value *before* each queue, so the number shown is the one used; its seed
+    mode switch offers randomize/fixed/increment/decrement. 0, which the shipped API
+    graphs use, draws a fresh 64-bit seed on the server so API jobs randomize too."""
     @classmethod
     def INPUT_TYPES(cls):
-        return {'required':{'seed':('INT',{'default':0,'min':0,'max':MAX_SEED,'control_after_generate':True,
-            'tooltip':'Randomized on every queue in the UI. 0 = pick a random seed on the server (API default).'})}}
+        return {'required':{'seed':('INT',{'default':0,'min':0,'max':MAX_SEED,
+            'tooltip':'Randomized before every queue in the UI (see seed mode). 0 = pick a random seed on the server (API default).'})}}
     RETURN_TYPES=('INT',)
     RETURN_NAMES=('seed',)
     FUNCTION='run'

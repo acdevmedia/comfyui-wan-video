@@ -1,42 +1,47 @@
 [
   {
-    "name": "2.2_standard_i2v",
-    "mode": "standard",
-    "task": "i2v",
-    "ui": "workflows/2.2_standard_i2v.json",
-    "api": "api/2.2_standard_i2v.json",
-    "experimental": false
-  },
-  {
     "name": "2.2_turbo_i2v",
+    "title": "01 Turbo - Image to Video",
     "mode": "turbo",
     "task": "i2v",
-    "ui": "workflows/2.2_turbo_i2v.json",
+    "ui": "workflows/01 Turbo - Image to Video.json",
     "api": "api/2.2_turbo_i2v.json",
     "experimental": false
   },
   {
-    "name": "2.2_remix_i2v",
-    "mode": "remix",
+    "name": "2.2_t2v-turbo_t2v",
+    "title": "02 Turbo - Text to Video",
+    "mode": "t2v-turbo",
+    "task": "t2v",
+    "ui": "workflows/02 Turbo - Text to Video.json",
+    "api": "api/2.2_t2v-turbo_t2v.json",
+    "experimental": false
+  },
+  {
+    "name": "2.2_standard_i2v",
+    "title": "03 Standard 20-step - Image to Video",
+    "mode": "standard",
     "task": "i2v",
-    "ui": "workflows/2.2_remix_i2v.json",
-    "api": "api/2.2_remix_i2v.json",
-    "experimental": true
+    "ui": "workflows/03 Standard 20-step - Image to Video.json",
+    "api": "api/2.2_standard_i2v.json",
+    "experimental": false
   },
   {
     "name": "2.2_t2v_t2v",
+    "title": "04 Standard 20-step - Text to Video",
     "mode": "t2v",
     "task": "t2v",
-    "ui": "workflows/2.2_t2v_t2v.json",
+    "ui": "workflows/04 Standard 20-step - Text to Video.json",
     "api": "api/2.2_t2v_t2v.json",
     "experimental": false
   },
   {
-    "name": "2.2_t2v-turbo_t2v",
-    "mode": "t2v-turbo",
-    "task": "t2v",
-    "ui": "workflows/2.2_t2v-turbo_t2v.json",
-    "api": "api/2.2_t2v-turbo_t2v.json",
-    "experimental": false
+    "name": "2.2_remix_i2v",
+    "title": "05 Remix - Image to Video",
+    "mode": "remix",
+    "task": "i2v",
+    "ui": "workflows/05 Remix - Image to Video.json",
+    "api": "api/2.2_remix_i2v.json",
+    "experimental": true
   }
 ]

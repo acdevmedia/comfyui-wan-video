@@ -1,6 +1,6 @@
 {
   "name": "ACDEV WAN 2.2 I2V 14B ComfyUI Video",
-  "imageName": "ghcr.io/acdevmedia/wan-comfyui:v0.1.0-rc.7",
+  "imageName": "ghcr.io/acdevmedia/wan-comfyui:v0.1.0-rc.8",
   "containerDiskInGb": 200,
   "volumeInGb": 0,
   "volumeMountPath": "/workspace",

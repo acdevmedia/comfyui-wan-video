@@ -142,5 +142,6 @@
     }
   ],
   "attention": "pytorch",
-  "validation": "Source checks only; Docker build and GPU generation pending."
+  "validation": "Source checks only; Docker build and GPU generation pending.",
+  "workflow_folder": "WAN 2.2 video (reference)"
 }

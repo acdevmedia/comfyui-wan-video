@@ -87,10 +87,10 @@ def main():
                 for other in jobs:other.cancel()
                 raise SystemExit(str(error))
             verified[key]={'sha256':m['sha256'],'stat':fingerprint(target)};save_verified(ledger,verified)
-    dest=root/'user/default/workflows'/f'ACDEV {version} bundle {profile["bundle_version"]}';dest.mkdir(parents=True,exist_ok=True)
+    dest=root/'user/default/workflows'/profile.get('workflow_folder',f'ACDEV {version} bundle {profile["bundle_version"]}');dest.mkdir(parents=True,exist_ok=True)
     for w in catalog:
         if mode!='all' and w['mode']!=mode:continue
-        target=dest/(w['name']+'.json')
+        target=dest/Path(w['ui']).name  # human-readable name, e.g. '01 Eros - Image to Video.json'
         # Exclusive create preserves user edits on every restart.
         with tempfile.NamedTemporaryFile(mode='w',dir=dest,delete=False) as f:
             temporary=Path(f.name);f.write((source/w['ui']).read_text())

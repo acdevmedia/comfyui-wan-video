@@ -40,7 +40,7 @@ class BundleTests(unittest.TestCase):
  def test_random_seed(self):
   r=video.RandomSeed();a,b=r.run(0)[0],r.run(0)[0];self.assertNotEqual(a,b);self.assertTrue(0<a<=video.MAX_SEED)
   self.assertEqual(r.run(123),(123,));self.assertTrue(math.isnan(r.IS_CHANGED(seed=0)));self.assertEqual(r.IS_CHANGED(seed=7),7)
-  spec=r.INPUT_TYPES()['required']['seed'][1];self.assertEqual(spec['max'],2**64-1);self.assertTrue(spec['control_after_generate'])
+  spec=r.INPUT_TYPES()['required']['seed'][1];self.assertEqual(spec['max'],2**64-1);self.assertNotIn('control_after_generate',spec)  # seed-controls.js randomizes before queue
  def test_manifests_and_graphs(self):
   for v in (ROOT/'versions').iterdir():
    schemas=json.loads((v/'node-input-schemas.json').read_text())
@@ -55,11 +55,17 @@ class BundleTests(unittest.TestCase):
     seeds=[k for k,n in api.items() if n['class_type']=='ACDEVRandomSeed'];self.assertEqual(len(seeds),1);seed=seeds[0]
     self.assertEqual(sorted(map(int,api)),sorted(nodes))
     self.assertEqual(edges,{(int(v_[0]),v_[1],int(k),name) for k,n in api.items() for name,v_ in n['inputs'].items() if isinstance(v_,list)})
-    self.assertEqual(promoted,{w:api[control]['inputs'][w] for w in ('prompt','negative_prompt','width','height','duration')})
+    owner={'width':'ACDEVVideoControls','height':'ACDEVVideoControls','duration':'ACDEVVideoControls','negative_prompt':'ACDEVVideoControls','seed':'ACDEVRandomSeed','steps':'BasicScheduler','cfg':'CFGGuider'}
+    expected={w:next(n['inputs'][w] for n in api.values() if n['class_type']==c) for w,c in owner.items() if any(n['class_type']==c for n in api.values())}
+    self.assertEqual(promoted,expected)  # every Shot settings control drives the value ComfyUI executes
+    if 'BasicScheduler' in json.dumps(api):self.assertTrue({'steps','cfg'}<=set(promoted))  # H3 filmmaker controls
+    (prompt_node,)=[k for k,n in api.items() if n['class_type']=='PrimitiveStringMultiline'];self.assertEqual(api[control]['inputs']['prompt'],[prompt_node,0])
     (outer,)=[n for n in ui['nodes'] if n['type']==ui['definitions']['subgraphs'][0]['id']]
     self.assertEqual(len([i for i in outer['inputs'] if i.get('widget')]),len(outer['widgets_values']),'one value per widget slot or the UI shifts values')
-    visible=[n['type'] for n in ui['nodes']];self.assertEqual(len(visible),4 if item['task']=='i2v' else 3,visible);self.assertIn('ACDEVRandomSeed',visible)
-    (sn,)=[n for n in ui['nodes'] if n['type']=='ACDEVRandomSeed'];self.assertEqual(sn['widgets_values'],[0,'randomize']);self.assertEqual(api[seed]['inputs'],{'seed':0})
+    titles=[n.get('title') for n in ui['nodes']]
+    self.assertEqual(titles,['01 · Describe your shot']+(['Starting image'] if item['task']=='i2v' else [])+['02 · Shot settings','03 · Your video'])
+    self.assertEqual(api[seed]['inputs'],{'seed':0})  # API default: server-side random seed
+    self.assertRegex(Path(item['ui']).name,r'^\d\d [A-Z][\w -]+ - (Image|Text) to Video\.json$')
     for k,n in api.items():
      self.assertEqual(n['class_type'],nodes[int(k)]['type'])
      if n['class_type'] in schemas:
@@ -89,6 +95,10 @@ class BundleTests(unittest.TestCase):
       neg=api[gd['inputs']['negative'][0]]
       self.assertIn(neg['class_type'],('WanImageToVideo','MiniMaxH3ImageToVideo'))
       self.assertIn('LoadImage',[api[v[0]]['class_type'] for v in neg['inputs'].values() if isinstance(v,list)])
+    if item['task']=='i2v' and 'MiniMaxH3ImageToVideo' in json.dumps(api):  # H3 CFG is user-adjustable, so the negative always carries the image
+     for gd in api.values():
+      if gd['class_type']=='CFGGuider':
+       neg=api[gd['inputs']['negative'][0]];self.assertEqual(neg['class_type'],'MiniMaxH3ImageToVideo');self.assertIn('first_frame',neg['inputs'])
     if item['mode']=='turbo':self.assertEqual(sum(n['class_type']=='LoraLoaderModelOnly' for n in api.values()),2)
  def test_provision_skips_rehash_until_file_changes(self):
   import hashlib,os,sys,tempfile,types
