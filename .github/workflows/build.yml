@@ -2,7 +2,7 @@ name: Validate and build video bundle
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, develop]
     tags: ["v*"]
 permissions:
   contents: write
