@@ -27,12 +27,14 @@ def flatten(ui):
  return nodes,edges,promoted
 class BundleTests(unittest.TestCase):
  def test_controls(self):
-  c=video.VideoControls();self.assertNotIn('num_frames',c.INPUT_TYPES()['required']);self.assertNotIn('length_mode',c.INPUT_TYPES()['required'])
+  c=video.VideoControls();self.assertGreaterEqual(c.INPUT_TYPES()['required']['duration'][1]['max'],1_000_000);self.assertNotIn('num_frames',c.INPUT_TYPES()['required']);self.assertNotIn('length_mode',c.INPUT_TYPES()['required'])
   for family,expected,fps,longest in [('wan',81,16,241),('h3',124,24,362)]:
    args=dict(family=family,width=832,height=480,duration=5,prompt='test',negative_prompt='bad')
    a=c.run(**args);b=c.run(**args)
    self.assertEqual(a[2:6],(expected,float(fps),'test','bad'));self.assertEqual(a,b);self.assertFalse(hasattr(c,'IS_CHANGED'))
    self.assertEqual(c.run(**{**args,'duration':15})[2],longest)
+   self.assertEqual(c.run(**{**args,'duration':60})[2],961 if family=='wan' else 1450)  # no upper cap
+   self.assertEqual(c.run(**{**args,'duration':600})[2]>=600*fps,True)
    self.assertEqual(c.run(**{**args,'duration':0.2})[2],5)  # tiny requests snap up to the minimum
    with self.assertRaises(ValueError):c.run(**{**args,'width':833})
  def test_random_seed(self):

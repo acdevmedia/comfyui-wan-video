@@ -10,7 +10,7 @@ class VideoControls:
             'family': (['wan','h3'],),
             'width': ('INT', {'default':832,'min':64,'max':4096,'step':32}),
             'height': ('INT', {'default':480,'min':64,'max':4096,'step':32}),
-            'duration': ('FLOAT', {'default':5.0,'min':0.2,'max':15.0,'step':0.1,'tooltip':'Seconds. Rounded up to the model frame grid (WAN 16 fps 4k+1, H3 24 fps 17k+5).'}),
+            'duration': ('FLOAT', {'default':5.0,'min':0.2,'max':1_000_000.0,'step':0.1,'tooltip':'Seconds, no upper limit. Rounded up to the model frame grid (WAN 16 fps 4k+1, H3 24 fps 17k+5). H3 was trained on ~5-15 s and WAN on ~5 s; longer clips are untested and time/VRAM grow faster than length.'}),
             'prompt': ('STRING', {'default':'A cinematic shot. The subject moves naturally as the camera slowly tracks forward.','multiline':True}),
             'negative_prompt': ('STRING', {'default':NEGATIVE,'multiline':True}),
         }}
@@ -26,11 +26,11 @@ class VideoControls:
         if width%32 or height%32 or not 64<=width<=4096 or not 64<=height<=4096:
             raise ValueError('Dimensions must be multiples of 32, between 64 and 4096')
         fps=24.0 if family=='h3' else 16.0
-        grid,offset,maximum=(17,5,362) if family=='h3' else (4,1,241)
+        grid,offset=(17,5) if family=='h3' else (4,1)
         requested=math.ceil(round(duration*fps,6))
         frames=offset+max(0,math.ceil((requested-offset)/grid))*grid
-        if not 5<=frames<=maximum:
-            raise ValueError(f'Duration is outside the supported range (max {maximum} frames, {maximum/fps:.2f}s)')
+        if frames<5:
+            raise ValueError('Duration is too short: the shortest clip is 5 frames')
         print(f'[video] {width}x{height}, {frames} frames, {frames/fps:.3f}s at {fps:g}fps')
         return width,height,frames,fps,prompt,negative_prompt
 
