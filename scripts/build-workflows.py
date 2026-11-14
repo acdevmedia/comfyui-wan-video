@@ -98,7 +98,12 @@ def subgraph_ui(g,name,title):
    slot_=next((i for i,x in enumerate(sg_inputs) if x['name']==iname),None)
    if slot_ is None:
     slot_=sg_input(iname,l[5]);t=lid();top_links.append([t,l[1],l[2],sid,len(outer['inputs']),l[5]])
-    outer['inputs'].append(dict(name=iname,type=l[5],link=t))
+    # The frontend gives every subgraph input that feeds an inner *widget* (e.g. the seed
+    # into noise_seed) its own widget slot on the outer node, even when linked. Each such
+    # slot needs a value, or every later widget value shifts by one.
+    feeds_widget='widget' in nodes[l[3]]['inputs'][l[4]]
+    outer['inputs'].append(dict(name=iname,type=l[5],link=t,**({'widget':{'name':iname}} if feeds_widget else {})))
+    if feeds_widget:outer['widgets_values'].append(0)
    sg_inputs[slot_]['linkIds'].append(l[0]);inner_links.append(dict(id=l[0],origin_id=-10,origin_slot=slot_,target_id=l[3],target_slot=l[4],type=l[5]))
  # User controls: promote the Video controls widgets onto the subgraph node.
  ctrl=next(n for n in nodes.values() if n['type']=='ACDEVVideoControls');order=ctrl['properties']['widget_order']
@@ -155,7 +160,7 @@ for project,version,modes in [('WAN-SETUP', '2.2', ['standard', 'turbo', 'remix'
   for task in (['i2v', 't2v'] if project=='EROSH3-SETUP' else (['t2v'] if mode.startswith('t2v') else ['i2v'])):
    wan=project=='WAN-SETUP';g=Graph();active=[m for m in profile['models'] if mode in m['modes'] or 'all' in m['modes']]
    def file(d,fragment=''):return next(pathlib.Path(m['file']).name for m in active if m['directory']==d and fragment in m['file'])
-   ctrl=g.add('ACDEVVideoControls',dict(family='wan' if wan else 'h3',width=832 if wan else 1344,height=480 if wan else 768,duration=5.0,prompt='A cinematic shot. The subject moves naturally as the camera slowly tracks forward.',negative_prompt='low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts'))
+   ctrl=g.add('ACDEVVideoControls',dict(family='wan' if wan else 'h3',width=832 if wan else 1024,height=480 if wan else 576,duration=5.0,prompt='A cinematic shot. The subject moves naturally as the camera slowly tracks forward.',negative_prompt='low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts'))
    image=g.add('LoadImage',dict(image='reference.png'),'Upload reference image') if task=='i2v' else None
    # Separate node so only sampling re-runs per job; prompt/image encodes stay cached.
    seed=g.add('ACDEVRandomSeed',dict(seed=0),'Seed (randomized every job)')

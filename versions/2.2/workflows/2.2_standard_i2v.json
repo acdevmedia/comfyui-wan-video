@@ -143,7 +143,10 @@
         {
           "name": "seed",
           "type": "INT",
-          "link": 31
+          "link": 31,
+          "widget": {
+            "name": "seed"
+          }
         },
         {
           "name": "prompt",
@@ -197,6 +200,7 @@
       ],
       "properties": {},
       "widgets_values": [
+        0,
         "A cinematic shot. The subject moves naturally as the camera slowly tracks forward.",
         "low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts",
         832,

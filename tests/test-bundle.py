@@ -54,6 +54,8 @@ class BundleTests(unittest.TestCase):
     self.assertEqual(sorted(map(int,api)),sorted(nodes))
     self.assertEqual(edges,{(int(v_[0]),v_[1],int(k),name) for k,n in api.items() for name,v_ in n['inputs'].items() if isinstance(v_,list)})
     self.assertEqual(promoted,{w:api[control]['inputs'][w] for w in ('prompt','negative_prompt','width','height','duration')})
+    (outer,)=[n for n in ui['nodes'] if n['type']==ui['definitions']['subgraphs'][0]['id']]
+    self.assertEqual(len([i for i in outer['inputs'] if i.get('widget')]),len(outer['widgets_values']),'one value per widget slot or the UI shifts values')
     visible=[n['type'] for n in ui['nodes']];self.assertEqual(len(visible),4 if item['task']=='i2v' else 3,visible);self.assertIn('ACDEVRandomSeed',visible)
     (sn,)=[n for n in ui['nodes'] if n['type']=='ACDEVRandomSeed'];self.assertEqual(sn['widgets_values'],[0,'randomize']);self.assertEqual(api[seed]['inputs'],{'seed':0})
     for k,n in api.items():
