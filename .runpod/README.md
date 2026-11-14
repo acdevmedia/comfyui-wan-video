@@ -1,6 +1,6 @@
 # WAN 2.2 I2V-A14B ComfyUI Runpod bundle
 
-Version profile: `versions/2.2/`. Bundle revision: `0.1.0`. Container image: `ghcr.io/acdevmedia/wan-comfyui:2.2`. **Container build and CPU smoke tests passed for v0.1.0-rc.2. GPU generation remains pending.**
+Version profile: `versions/2.2/`. Bundle revision: `0.1.0`. Container image: `ghcr.io/acdevmedia/wan-comfyui:2.2`. **Reference bundle. Every `develop` build passes the source, container and CPU schema checks before publishing. GPU generation was verified on an RTX PRO 6000 (see docs/VALIDATION.md); the latest canvas and Exact Frame changes have not yet run on a GPU.**
 
 Available modes: standard (20 steps), turbo (8-step three-stage schedule: two high-noise steps on the base model at CFG 3.5 to set real motion, then the matched high/low LightX2V adapters at CFG 1), remix (v3.0 checkpoints; experimental 12-step publisher-example schedule). Default: `all`: every workflow (each mode, image-to-video and text-to-video) is installed and its weights downloaded, about 97 GB. Set `MODEL_MODE` to a single mode for a smaller download (about 36–42 GB) and only that mode's workflows. Workflows (Workflows sidebar → **WAN 2.2 video (reference)**): 01/02 **Turbo** image/text to video, 03/04 **Standard 20-step**, 05 **Remix** image to video.
 
@@ -41,10 +41,10 @@ Pushes to `main` build and CPU-smoke-test containers before publishing model-ver
 
 Runpod Hub publication uses the released image after image smoke checks. GPU quality and performance require separate Runpod generation tests. See release notes for the exact validation scope.
 
-Initial test releases use `v0.1.0-rc.2` and are marked prerelease. Hub submission and public Pod template publication wait for GPU tests. The `.runpod` files are prepared for that later submission.
+Images follow the model version, like the LTX (`ltx-studio:2.5`) and Eros (`eros-comfyui:1.5`) bundles: every passing build of `develop` publishes `ghcr.io/acdevmedia/wan-comfyui:2.2` plus an immutable `sha-<commit>` tag for pinning or rollback. Hub submission and public Pod template publication wait for GPU tests. The `.runpod` files are prepared for that later submission.
 
 For private test Pods, the template tool accepts `--registry-auth-id` pointing to an existing Runpod GHCR authorization. Before public Hub submission, make the GHCR package public and verify an anonymous pull; never embed registry passwords or tokens in Hub files.
 
-Release candidate: [v0.1.0-rc.2](https://github.com/acdevmedia/comfyui-wan-video/releases/tag/v0.1.0-rc.2). [Container build and CPU smoke results](https://github.com/acdevmedia/comfyui-wan-video/actions/runs/43521502232). A private digest-pinned test template is available; public Hub submission remains deferred.
+[Container build and CPU smoke results](https://github.com/acdevmedia/comfyui-wan-video/actions/runs/43521502232). A private digest-pinned test template is available; public Hub submission remains deferred.
 
 Hub serves the ComfyUI HTTP/WebSocket interface on port 8000; readiness is on 8001. Its readiness check does not generate a video.

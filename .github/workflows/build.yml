@@ -3,9 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop]
-    tags: ["v*"]
 permissions:
-  contents: write
+  contents: read
   packages: write
 jobs:
   build:
@@ -38,7 +37,8 @@ jobs:
           docker run --rm --entrypoint python3 video-bundle:test /opt/video/scripts/smoke-schemas.py
           docker run --rm --entrypoint bash video-bundle:test /opt/video/scripts/test-copyparty.sh
       - name: Publish tested image
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        # Model-version tag (like ltx-studio:2.5 and eros-comfyui:1.5) plus an immutable sha tag.
+        if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/wan-comfyui
         run: |
@@ -46,17 +46,3 @@ jobs:
           docker tag video-bundle:test "$IMAGE:sha-${{ github.sha }}"
           docker push "$IMAGE:2.2"
           docker push "$IMAGE:sha-${{ github.sha }}"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            docker tag video-bundle:test "$IMAGE:${GITHUB_REF_NAME}"
-            docker push "$IMAGE:${GITHUB_REF_NAME}"
-          fi
-      - name: Package versioned release assets
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 scripts/package-release.py
-          release_args=()
-          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then release_args+=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" dist/* --title "Video bundle $GITHUB_REF_NAME" --notes-file dist/RELEASE.md "${release_args[@]}"
-
