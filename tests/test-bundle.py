@@ -36,7 +36,9 @@ class BundleTests(unittest.TestCase):
    self.assertEqual(c.run(**{**args,'duration':60})[2],961 if family=='wan' else 1450)  # no upper cap
    self.assertEqual(c.run(**{**args,'duration':600})[2]>=600*fps,True)
    self.assertEqual(c.run(**{**args,'duration':0.2})[2],5)  # tiny requests snap up to the minimum
-   with self.assertRaises(ValueError):c.run(**{**args,'width':833})
+   self.assertEqual(c.run(**{**args,'width':960,'height':540})[:2],(960,544))  # common sizes round to 32 instead of failing
+   self.assertEqual(c.run(**{**args,'width':1280,'height':720})[:2],(1280,704))
+   self.assertEqual(c.run(**{**args,'width':10,'height':9000})[:2],(64,4096))
  def test_exact_frame(self):
   c=video.VideoControls();img=type('Image',(),{'shape':(1,1920,1080,3)})()  # portrait 9:16 upload
   args=dict(family='h3',width=1024,height=576,duration=5,prompt='p',negative_prompt='n')

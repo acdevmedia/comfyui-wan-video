@@ -24,8 +24,11 @@ class VideoControls:
     def run(self,family,width,height,duration,prompt,negative_prompt,exact_frame=False,image=None):
         if family not in ('wan','h3'):
             raise ValueError('Invalid video family')
-        if width%32 or height%32 or not 64<=width<=4096 or not 64<=height<=4096:
-            raise ValueError('Dimensions must be multiples of 32, between 64 and 4096')
+        # Common sizes such as 960x540 or 1280x720 are not multiples of 32: round to the nearest valid size instead of failing.
+        snap=lambda v:min(4096,max(64,round(v/32)*32))
+        if (snap(width),snap(height))!=(width,height):
+            print(f'[video] {width}x{height} rounded to {snap(width)}x{snap(height)} (multiples of 32)')
+            width,height=snap(width),snap(height)
         if image is not None and not exact_frame:
             width,height=fit_frame(width,height,image.shape[2],image.shape[1])
         fps=24.0 if family=='h3' else 16.0
