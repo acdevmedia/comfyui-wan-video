@@ -36,7 +36,9 @@ class BundleTests(unittest.TestCase):
    self.assertEqual(c.run(**{**args,'duration':0.2})[2],5)  # tiny requests snap up to the minimum
    with self.assertRaises(ValueError):c.run(**{**args,'width':833})
  def test_random_seed(self):
-  r=video.RandomSeed();self.assertNotEqual(r.run(),r.run());self.assertTrue(math.isnan(r.IS_CHANGED()))
+  r=video.RandomSeed();a,b=r.run(0)[0],r.run(0)[0];self.assertNotEqual(a,b);self.assertTrue(0<a<=video.MAX_SEED)
+  self.assertEqual(r.run(123),(123,));self.assertTrue(math.isnan(r.IS_CHANGED(seed=0)));self.assertEqual(r.IS_CHANGED(seed=7),7)
+  spec=r.INPUT_TYPES()['required']['seed'][1];self.assertEqual(spec['max'],2**64-1);self.assertTrue(spec['control_after_generate'])
  def test_manifests_and_graphs(self):
   for v in (ROOT/'versions').iterdir():
    schemas=json.loads((v/'node-input-schemas.json').read_text())
@@ -52,7 +54,8 @@ class BundleTests(unittest.TestCase):
     self.assertEqual(sorted(map(int,api)),sorted(nodes))
     self.assertEqual(edges,{(int(v_[0]),v_[1],int(k),name) for k,n in api.items() for name,v_ in n['inputs'].items() if isinstance(v_,list)})
     self.assertEqual(promoted,{w:api[control]['inputs'][w] for w in ('prompt','negative_prompt','width','height','duration')})
-    visible=[n['type'] for n in ui['nodes']];self.assertEqual(len(visible),3 if item['task']=='i2v' else 2,visible)
+    visible=[n['type'] for n in ui['nodes']];self.assertEqual(len(visible),4 if item['task']=='i2v' else 3,visible);self.assertIn('ACDEVRandomSeed',visible)
+    (sn,)=[n for n in ui['nodes'] if n['type']=='ACDEVRandomSeed'];self.assertEqual(sn['widgets_values'],[0,'randomize']);self.assertEqual(api[seed]['inputs'],{'seed':0})
     for k,n in api.items():
      self.assertEqual(n['class_type'],nodes[int(k)]['type'])
      if n['class_type'] in schemas:
@@ -106,6 +109,27 @@ class BundleTests(unittest.TestCase):
      time.sleep(0.05);target.write_bytes(b'x'*len(payload))
      prov.main();self.assertEqual(len(downloads),2);self.assertTrue(downloads[-1])  # corrupt: forced re-download
      with mock.patch.dict(os.environ,{'VERIFY_MODELS':'full'}):n=len(hashed);prov.main();self.assertEqual(len(hashed),n+1)
+ def test_provision_downloads_in_parallel(self):
+  import hashlib,os,sys,tempfile,threading,time,types
+  from unittest import mock
+  with tempfile.TemporaryDirectory() as tmp:
+   tmp=Path(tmp);versions=tmp/'versions'/'v1';(versions/'workflows').mkdir(parents=True)
+   payloads={f'w{i}.safetensors':bytes([i])*4096 for i in range(3)}
+   (versions/'profile.json').write_text(json.dumps(dict(default_mode='m',bundle_version='0',models=[dict(repo='r',revision='0'*40,file=n,directory='loras',size=len(p),sha256=hashlib.sha256(p).hexdigest(),modes=['all']) for n,p in payloads.items()])))
+   (versions/'workflow-catalog.json').write_text('[]')
+   active=[0];peak=[0];lock=threading.Lock()
+   def fake_download(repo_id,filename,revision,local_dir,token,force_download):
+    with lock:active[0]+=1;peak[0]=max(peak[0],active[0])
+    time.sleep(0.2);out=Path(local_dir)/filename;out.write_bytes(payloads[filename])
+    with lock:active[0]-=1
+    return str(out)
+   spec=importlib.util.spec_from_file_location('provision',ROOT/'scripts/provision.py');prov=importlib.util.module_from_spec(spec);spec.loader.exec_module(prov)
+   env={'VIDEO_VERSIONS_DIR':str(tmp/'versions'),'COMFYUI_DIR':str(tmp/'comfy'),'MODEL_MODE':'all','VIDEO_VERSION':'v1'}
+   with mock.patch.dict(os.environ,env),mock.patch.dict(sys.modules,{'huggingface_hub':types.SimpleNamespace(hf_hub_download=fake_download)}),mock.patch.object(prov.shutil,'disk_usage',return_value=types.SimpleNamespace(free=10**12)):
+    prov.main()
+   self.assertGreater(peak[0],1)
+   ledger=json.loads((tmp/'comfy/models/.acdev-verified.json').read_text());self.assertEqual(len(ledger),3)
+   for n,p in payloads.items():self.assertEqual((tmp/'comfy/models/loras'/n).read_bytes(),p)
  def test_context_excludes_secrets(self):
   ignore=(ROOT/'.dockerignore').read_text();self.assertTrue(ignore.startswith('*\n'));self.assertNotIn('!.env',ignore)
   for v in (ROOT/'versions').iterdir():self.assertIn(v.name,(ROOT/'Dockerfile').read_text())

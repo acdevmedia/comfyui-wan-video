@@ -24,9 +24,11 @@
   },
   "3": {
     "class_type": "ACDEVRandomSeed",
-    "inputs": {},
+    "inputs": {
+      "seed": 0
+    },
     "_meta": {
-      "title": "Random seed (new every job)"
+      "title": "Seed (randomized every job)"
     }
   },
   "4": {
@@ -62,7 +64,7 @@
       ]
     },
     "_meta": {
-      "title": "Negative prompt (inactive at CFG 1)"
+      "title": "Negative prompt"
     }
   },
   "7": {
@@ -129,6 +131,29 @@
     }
   },
   "10": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {
+      "title": "UNETLoader"
+    }
+  },
+  "11": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": [
+        "9",
+        0
+      ],
+      "shift": 8.0
+    },
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "12": {
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": [
@@ -142,34 +167,24 @@
       "title": "LoraLoaderModelOnly"
     }
   },
-  "11": {
+  "13": {
     "class_type": "ModelSamplingSD3",
     "inputs": {
       "model": [
-        "10",
+        "12",
         0
       ],
-      "shift": 5.0
+      "shift": 8.0
     },
     "_meta": {
       "title": "ModelSamplingSD3"
     }
   },
-  "12": {
-    "class_type": "UNETLoader",
-    "inputs": {
-      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
-      "weight_dtype": "default"
-    },
-    "_meta": {
-      "title": "UNETLoader"
-    }
-  },
-  "13": {
+  "14": {
     "class_type": "LoraLoaderModelOnly",
     "inputs": {
       "model": [
-        "12",
+        "10",
         0
       ],
       "lora_name": "wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors",
@@ -179,116 +194,35 @@
       "title": "LoraLoaderModelOnly"
     }
   },
-  "14": {
-    "class_type": "ModelSamplingSD3",
-    "inputs": {
-      "model": [
-        "13",
-        0
-      ],
-      "shift": 5.0
-    },
-    "_meta": {
-      "title": "ModelSamplingSD3"
-    }
-  },
   "15": {
-    "class_type": "ACDEVWanTurboSigmas",
-    "inputs": {},
-    "_meta": {
-      "title": "ACDEVWanTurboSigmas"
-    }
-  },
-  "16": {
-    "class_type": "SplitSigmas",
-    "inputs": {
-      "sigmas": [
-        "15",
-        0
-      ],
-      "step": 2
-    },
-    "_meta": {
-      "title": "SplitSigmas"
-    }
-  },
-  "17": {
-    "class_type": "KSamplerSelect",
-    "inputs": {
-      "sampler_name": "euler"
-    },
-    "_meta": {
-      "title": "KSamplerSelect"
-    }
-  },
-  "18": {
-    "class_type": "RandomNoise",
-    "inputs": {
-      "noise_seed": [
-        "3",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "RandomNoise"
-    }
-  },
-  "19": {
-    "class_type": "CFGGuider",
-    "inputs": {
-      "model": [
-        "11",
-        0
-      ],
-      "positive": [
-        "8",
-        0
-      ],
-      "negative": [
-        "8",
-        1
-      ],
-      "cfg": 1.0
-    },
-    "_meta": {
-      "title": "CFGGuider"
-    }
-  },
-  "20": {
-    "class_type": "SamplerCustomAdvanced",
-    "inputs": {
-      "noise": [
-        "18",
-        0
-      ],
-      "guider": [
-        "19",
-        0
-      ],
-      "sampler": [
-        "17",
-        0
-      ],
-      "sigmas": [
-        "16",
-        0
-      ],
-      "latent_image": [
-        "8",
-        2
-      ]
-    },
-    "_meta": {
-      "title": "SamplerCustomAdvanced"
-    }
-  },
-  "21": {
-    "class_type": "CFGGuider",
+    "class_type": "ModelSamplingSD3",
     "inputs": {
       "model": [
         "14",
         0
       ],
+      "shift": 8.0
+    },
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "16": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": [
+        "11",
+        0
+      ],
+      "add_noise": "enable",
+      "noise_seed": [
+        "3",
+        0
+      ],
+      "steps": 8,
+      "cfg": 3.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
       "positive": [
         "8",
         0
@@ -297,52 +231,95 @@
         "8",
         1
       ],
-      "cfg": 1.0
+      "latent_image": [
+        "8",
+        2
+      ],
+      "start_at_step": 0,
+      "end_at_step": 2,
+      "return_with_leftover_noise": "enable"
     },
     "_meta": {
-      "title": "CFGGuider"
+      "title": "KSamplerAdvanced"
     }
   },
-  "22": {
-    "class_type": "DisableNoise",
-    "inputs": {},
-    "_meta": {
-      "title": "DisableNoise"
-    }
-  },
-  "23": {
-    "class_type": "SamplerCustomAdvanced",
+  "17": {
+    "class_type": "KSamplerAdvanced",
     "inputs": {
-      "noise": [
-        "22",
+      "model": [
+        "13",
         0
       ],
-      "guider": [
-        "21",
+      "add_noise": "disable",
+      "noise_seed": [
+        "3",
         0
       ],
-      "sampler": [
-        "17",
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+        "8",
         0
       ],
-      "sigmas": [
-        "16",
+      "negative": [
+        "8",
         1
       ],
       "latent_image": [
-        "20",
+        "16",
         0
-      ]
+      ],
+      "start_at_step": 2,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "enable"
     },
     "_meta": {
-      "title": "SamplerCustomAdvanced"
+      "title": "KSamplerAdvanced"
     }
   },
-  "24": {
+  "18": {
+    "class_type": "KSamplerAdvanced",
+    "inputs": {
+      "model": [
+        "15",
+        0
+      ],
+      "add_noise": "disable",
+      "noise_seed": [
+        "3",
+        0
+      ],
+      "steps": 8,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "8",
+        1
+      ],
+      "latent_image": [
+        "17",
+        0
+      ],
+      "start_at_step": 4,
+      "end_at_step": 8,
+      "return_with_leftover_noise": "disable"
+    },
+    "_meta": {
+      "title": "KSamplerAdvanced"
+    }
+  },
+  "19": {
     "class_type": "VAEDecode",
     "inputs": {
       "samples": [
-        "23",
+        "18",
         0
       ],
       "vae": [
@@ -354,11 +331,11 @@
       "title": "VAEDecode"
     }
   },
-  "25": {
+  "20": {
     "class_type": "CreateVideo",
     "inputs": {
       "images": [
-        "24",
+        "19",
         0
       ],
       "fps": [
@@ -370,11 +347,11 @@
       "title": "CreateVideo"
     }
   },
-  "26": {
+  "21": {
     "class_type": "ACDEVSaveVideo",
     "inputs": {
       "video": [
-        "25",
+        "20",
         0
       ],
       "filename_prefix": "video/2.2/turbo/i2v",

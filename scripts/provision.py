@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor,as_completed
 
 
 def digest(path):
@@ -52,6 +54,7 @@ def main():
     ledger=models/'.acdev-verified.json'
     full=os.getenv('VERIFY_MODELS','fast').lower()=='full'
     verified={} if full else load_verified(ledger)
+    pending=[]
     for m in selected:
         dest=models/m['directory'];dest.mkdir(parents=True,exist_ok=True);target=dest/Path(m['file']).name
         key=f'{m["directory"]}/{target.name}'
@@ -63,14 +66,27 @@ def main():
             if digest(target)==m['sha256']:
                 verified[key]={'sha256':m['sha256'],'stat':fingerprint(target)};save_verified(ledger,verified)
                 print(f'[models] verified existing {target.name}',flush=True);continue
-        stale=target.exists();verified.pop(key,None)
+        verified.pop(key,None);pending.append((m,dest,target,key))
+    def fetch(m,dest,target):
         print(f'[models] downloading {target.name} ({m["size"]/1e9:.2f} GB)',flush=True)
+        started=time.time()
         # A present-but-wrong file must not be accepted from the Hub's local metadata.
-        path=Path(hf_hub_download(repo_id=m['repo'],filename=m['file'],revision=m['revision'],local_dir=dest,token=token,force_download=stale))
+        path=Path(hf_hub_download(repo_id=m['repo'],filename=m['file'],revision=m['revision'],local_dir=dest,token=token,force_download=target.exists()))
         if path.stat().st_size!=m['size'] or digest(path)!=m['sha256']:
-            path.unlink(missing_ok=True);raise SystemExit('Model integrity check failed: '+target.name)
+            path.unlink(missing_ok=True);raise RuntimeError('Model integrity check failed: '+target.name)
         if path!=target:path.replace(target)
-        verified[key]={'sha256':m['sha256'],'stat':fingerprint(target)};save_verified(ledger,verified)
+        print(f'[models] verified {target.name} ({m["size"]/1e6/max(time.time()-started,1e-3):.0f} MB/s)',flush=True)
+    # Several files at once: single-stream throughput is the bottleneck on many hosts.
+    workers=max(1,int(os.getenv('MODEL_DOWNLOAD_WORKERS','3')))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        jobs={pool.submit(fetch,m,dest,target):(m,target,key) for m,dest,target,key in pending}
+        for job in as_completed(jobs):
+            m,target,key=jobs[job]
+            try:job.result()
+            except Exception as error:
+                for other in jobs:other.cancel()
+                raise SystemExit(str(error))
+            verified[key]={'sha256':m['sha256'],'stat':fingerprint(target)};save_verified(ledger,verified)
     dest=root/'user/default/workflows'/f'ACDEV {version} bundle {profile["bundle_version"]}';dest.mkdir(parents=True,exist_ok=True)
     for w in catalog:
         if mode!='all' and w['mode']!=mode:continue

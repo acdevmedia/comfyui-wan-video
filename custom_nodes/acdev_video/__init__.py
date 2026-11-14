@@ -34,18 +34,24 @@ class VideoControls:
         print(f'[video] {width}x{height}, {frames} frames, {frames/fps:.3f}s at {fps:g}fps')
         return width,height,frames,fps,prompt,negative_prompt
 
+MAX_SEED=0xffffffffffffffff  # full 64-bit range, same as ComfyUI's KSampler
+
 class RandomSeed:
+    """Visible seed. The UI randomizes it before every queue (control_after_generate);
+    0, which the shipped API graphs use, draws a fresh 64-bit seed in the backend."""
     @classmethod
-    def INPUT_TYPES(cls):return {'required':{}}
+    def INPUT_TYPES(cls):
+        return {'required':{'seed':('INT',{'default':0,'min':0,'max':MAX_SEED,'control_after_generate':True,
+            'tooltip':'Randomized on every queue in the UI. 0 = pick a random seed on the server (API default).'})}}
     RETURN_TYPES=('INT',)
-    RETURN_NAMES=('random_seed',)
+    RETURN_NAMES=('seed',)
     FUNCTION='run'
     CATEGORY='ACDEV/Video'
     @classmethod
-    def IS_CHANGED(cls, **kwargs):
-        return float('nan')  # Re-execute for every queued job, including API calls.
-    def run(self):
-        seed=secrets.randbits(63)
+    def IS_CHANGED(cls, seed=0, **kwargs):
+        return float('nan') if seed==0 else seed  # 0 must re-run every job, including API calls.
+    def run(self,seed=0):
+        seed=seed or secrets.randbits(64) or 1
         print(f'[video] seed={seed}')
         return (seed,)
 
@@ -60,12 +66,12 @@ class WanTurboSigmas:
         # LightX2V publisher's ComfyUI schedule; split after step two.
         return (torch.tensor([1.0,0.9375001,0.8333333,0.625,0.0]),)
 NODE_CLASS_MAPPINGS={'ACDEVVideoControls':VideoControls,'ACDEVRandomSeed':RandomSeed,'ACDEVWanTurboSigmas':WanTurboSigmas}
-NODE_DISPLAY_NAME_MAPPINGS={'ACDEVVideoControls':'Video controls','ACDEVRandomSeed':'Random seed (new every job)','ACDEVWanTurboSigmas':'WAN LightX2V four-step sigmas'}
+NODE_DISPLAY_NAME_MAPPINGS={'ACDEVVideoControls':'Video controls','ACDEVRandomSeed':'Seed (randomized every job)','ACDEVWanTurboSigmas':'WAN LightX2V four-step sigmas'}
 
 class SaveVideo:
     @classmethod
     def INPUT_TYPES(cls):
-        return {'required': {'video':('VIDEO',),'filename_prefix':('STRING',{'default':'video/ACDEV'}),'seed':('INT',{'default':0,'min':0,'max':2**63-1})},'hidden':{'prompt':'PROMPT','extra_pnginfo':'EXTRA_PNGINFO'}}
+        return {'required': {'video':('VIDEO',),'filename_prefix':('STRING',{'default':'video/ACDEV'}),'seed':('INT',{'default':0,'min':0,'max':MAX_SEED,'forceInput':True})},'hidden':{'prompt':'PROMPT','extra_pnginfo':'EXTRA_PNGINFO'}}
     RETURN_TYPES=()
     OUTPUT_NODE=True
     FUNCTION='run'

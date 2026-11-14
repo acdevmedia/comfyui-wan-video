@@ -24,9 +24,11 @@
   },
   "3": {
     "class_type": "ACDEVRandomSeed",
-    "inputs": {},
+    "inputs": {
+      "seed": 0
+    },
     "_meta": {
-      "title": "Random seed (new every job)"
+      "title": "Seed (randomized every job)"
     }
   },
   "4": {

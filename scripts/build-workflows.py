@@ -27,7 +27,7 @@ S={
  'VAEDecode':({'samples':'LATENT','vae':'VAE'},['IMAGE']),
  'VAEDecodeAudio':({'samples':'LATENT','vae':'VAE'},['AUDIO']),
  'CreateVideo':({'images':'IMAGE','audio':'AUDIO'},['VIDEO']),
- 'ACDEVSaveVideo':({'video':'VIDEO'},[]),
+ 'ACDEVSaveVideo':({'video':'VIDEO','seed':'INT'},[]),
 }
 class Graph:
  def __init__(self):self.api={};self.nodes=[];self.links=[]
@@ -56,7 +56,7 @@ class Graph:
    'CFGGuider':['cfg'],'RandomNoise':['noise_seed'],'KSamplerSelect':['sampler_name'],
    'BasicScheduler':['scheduler','steps','denoise'],'SplitSigmas':['step'],
    'CreateVideo':['fps','bit_depth','color_space','chroma_subsampling','codec'],
-   'ACDEVSaveVideo':['filename_prefix','seed']}
+   'ACDEVSaveVideo':['filename_prefix'],'ACDEVRandomSeed':['seed']}
   defaults={'width':832,'height':480,'length':81,'fps':16.0,'text':'','prompt':'','seed':0,'noise_seed':0,'bit_depth':'auto','color_space':'sRGB','chroma_subsampling':'auto','codec':'none'}
   values=[]
   for key in widget_orders.get(kind,[]):
@@ -64,6 +64,7 @@ class Graph:
    if isinstance(val,list):val=defaults[key]
    values.append(val)
    if kind in ('RandomNoise','KSamplerAdvanced') and key=='noise_seed':values.append('fixed')
+   if kind=='ACDEVRandomSeed':values.append('randomize')
    if kind=='LoadImage':values.append('image')
   node['widgets_values']=values
   node['properties']['widget_order']=widget_orders.get(kind,[])
@@ -76,7 +77,7 @@ class Graph:
 # UI layout: only the reference image, one "Generate video" node and the saver are
 # visible. Everything else lives in a subgraph (same format as Comfy-Org's templates);
 # the user-facing controls are subgraph inputs wired to the inner Video controls widgets.
-OUTSIDE=('LoadImage','ACDEVSaveVideo')
+OUTSIDE=('LoadImage','ACDEVRandomSeed','ACDEVSaveVideo')
 PROMOTED=('prompt','negative_prompt','width','height','duration')
 def subgraph_ui(g,name,title):
  import copy,uuid
@@ -93,10 +94,11 @@ def subgraph_ui(g,name,title):
  # Reference image: one subgraph input fanning out to every inner consumer.
  for l in flat:
   if l[1] in outside and l[3] not in outside:
-   slot_=next((i for i,x in enumerate(sg_inputs) if x['name']=='reference_image'),None)
+   iname={'IMAGE':'reference_image','INT':'seed'}[l[5]]
+   slot_=next((i for i,x in enumerate(sg_inputs) if x['name']==iname),None)
    if slot_ is None:
-    slot_=sg_input('reference_image','IMAGE');t=lid();top_links.append([t,l[1],l[2],sid,len(outer['inputs']),l[5]])
-    outer['inputs'].append(dict(name='reference_image',type='IMAGE',link=t));nodes[l[1]]['outputs'][l[2]]['links']=[t]
+    slot_=sg_input(iname,l[5]);t=lid();top_links.append([t,l[1],l[2],sid,len(outer['inputs']),l[5]])
+    outer['inputs'].append(dict(name=iname,type=l[5],link=t))
    sg_inputs[slot_]['linkIds'].append(l[0]);inner_links.append(dict(id=l[0],origin_id=-10,origin_slot=slot_,target_id=l[3],target_slot=l[4],type=l[5]))
  # User controls: promote the Video controls widgets onto the subgraph node.
  ctrl=next(n for n in nodes.values() if n['type']=='ACDEVVideoControls');order=ctrl['properties']['widget_order']
@@ -109,7 +111,7 @@ def subgraph_ui(g,name,title):
  # Outputs that leave the subgraph (video and the actual seed for the saver).
  for l in flat:
   if l[1] not in outside and l[3] in outside:
-   oname={'VIDEO':'video','INT':'seed'}[l[5]]
+   oname={'VIDEO':'video'}[l[5]]
    slot_=next((i for i,x in enumerate(sg_outputs) if x['name']==oname),None)
    if slot_ is None:
     sg_outputs.append(dict(id=str(uuid.uuid5(ns,name+'/out/'+oname)),name=oname,type=l[5],linkIds=[],pos=[0,0]));slot_=len(sg_outputs)-1
@@ -118,6 +120,11 @@ def subgraph_ui(g,name,title):
    t=lid();outer['outputs'][slot_]['links'].append(t);top_links.append([t,sid,slot_,l[3],l[4],l[5]])
    for i in nodes[l[3]]['inputs']:
     if i['link']==l[0]:i['link']=t
+ for l in flat:
+  if l[1] in outside and l[3] in outside:top_links.append(list(l))  # e.g. Seed -> Save, stays visible
+ for n in nodes.values():  # rebuild outside nodes' output link lists from the top-level wiring
+  if n['id'] in outside:
+   for o in n['outputs']:o['links']=[t[0] for t in top_links if t[1]==n['id'] and n['outputs'][t[2]] is o]
  for l in flat:
   if l[1] not in outside and l[3] not in outside:inner_links.append(dict(id=l[0],origin_id=l[1],origin_slot=l[2],target_id=l[3],target_slot=l[4],type=l[5]))
  # Left-to-right layout by dependency depth.
@@ -134,12 +141,12 @@ def subgraph_ui(g,name,title):
  for k,x in enumerate(sg_inputs):x['pos']=[200,40+30*k]
  for k,x in enumerate(sg_outputs):x['pos']=[right+20,40+30*k]
  nodes_out=[n for i,n in nodes.items() if i in outside]
- for n in nodes_out:
-  n['pos']=[0,0] if n['type']=='LoadImage' else [960,0];n['size']=[360,420] if n['type']=='LoadImage' else [480,520]
+ place={'LoadImage':([0,0],[360,420]),'ACDEVRandomSeed':([0,460],[360,110]),'ACDEVSaveVideo':([960,0],[480,520])}
+ for n in nodes_out:n['pos'],n['size']=place[n['type']]
  definition=dict(id=sgid,version=1,state=dict(lastGroupId=0,lastNodeId=sid,lastLinkId=next_link[0],lastRerouteId=0),revision=0,config={},name=title,
   inputNode=dict(id=-10,bounding=[0,0,180,40+30*len(sg_inputs)]),outputNode=dict(id=-20,bounding=[right,0,140,40+30*len(sg_outputs)]),
   inputs=sg_inputs,outputs=sg_outputs,widgets=[],nodes=[nodes[i] for i in inner],groups=[],links=sorted(inner_links,key=lambda l:l['id']),extra={})
- return dict(id=str(uuid.uuid5(ns,name+'/workflow')),revision=0,last_node_id=sid,last_link_id=next_link[0],nodes=nodes_out[:1]+[outer]+nodes_out[1:],links=sorted(top_links),groups=[],
+ return dict(id=str(uuid.uuid5(ns,name+'/workflow')),revision=0,last_node_id=sid,last_link_id=next_link[0],nodes=nodes_out+[outer],links=sorted(top_links),groups=[],
   definitions=dict(subgraphs=[definition]),config={},extra=dict(ds=dict(scale=0.8,offset=[40,80])),version=0.4)
 def slot(ref,n):return [ref[0],n]
 for project,version,modes in [('WAN-SETUP', '2.2', ['standard', 'turbo', 'remix', 't2v', 't2v-turbo'])]:
@@ -151,7 +158,7 @@ for project,version,modes in [('WAN-SETUP', '2.2', ['standard', 'turbo', 'remix'
    ctrl=g.add('ACDEVVideoControls',dict(family='wan' if wan else 'h3',width=832 if wan else 1344,height=480 if wan else 768,duration=5.0,prompt='A cinematic shot. The subject moves naturally as the camera slowly tracks forward.',negative_prompt='low quality, blurry, overexposed, static frame, frozen motion, temporal flicker, jitter, distorted anatomy, extra limbs, malformed hands, duplicated subjects, text, subtitles, watermark, compression artifacts'))
    image=g.add('LoadImage',dict(image='reference.png'),'Upload reference image') if task=='i2v' else None
    # Separate node so only sampling re-runs per job; prompt/image encodes stay cached.
-   seed=g.add('ACDEVRandomSeed',{},'Random seed (new every job)')
+   seed=g.add('ACDEVRandomSeed',dict(seed=0),'Seed (randomized every job)')
    clip=g.add('CLIPLoader',dict(clip_name=file('text_encoders'),type='wan' if wan else 'minimax',device='default'))
    vae=g.add('VAELoader',dict(vae_name=file('vae','wan_' if wan else 'video_vae')))
    # H3: Comfy-Org's I2V template samples every path guidance-free, so standard
@@ -162,31 +169,40 @@ for project,version,modes in [('WAN-SETUP', '2.2', ['standard', 'turbo', 'remix'
     # CFG negative must carry the same reference image as the positive.
     neg=g.add('MiniMaxH3ImageToVideo',dict(clip=clip,vae=vae,prompt=slot(ctrl,5),width=ctrl,height=slot(ctrl,1),length=slot(ctrl,2),**({'first_frame':image} if image else {})),'Negative prompt (with reference image)')
    else:
-    neg=g.add('CLIPTextEncode',dict(clip=clip,text=slot(ctrl,5)),'Negative prompt (inactive at CFG 1)' if not (wan and mode in ('standard','t2v')) else 'Negative prompt')
+    neg=g.add('CLIPTextEncode',dict(clip=clip,text=slot(ctrl,5)),'Negative prompt (inactive at CFG 1)' if not (wan and mode in ('standard','t2v','turbo','t2v-turbo')) else 'Negative prompt')
    if wan:
     pos=g.add('CLIPTextEncode',dict(clip=clip,text=slot(ctrl,4)))
     if task=='t2v':
      cond=g.add('EmptyHunyuanLatentVideo',dict(width=ctrl,height=slot(ctrl,1),length=slot(ctrl,2),batch_size=1));positive,negative,initial=pos,neg,cond
     else:
      cond=g.add('WanImageToVideo',dict(positive=pos,negative=neg,vae=vae,width=ctrl,height=slot(ctrl,1),length=slot(ctrl,2),batch_size=1,start_image=image));positive,negative,initial=cond,slot(cond,1),slot(cond,2)
-    models=[]
-    for n in ['high','low']:
-     m=g.add('UNETLoader',dict(unet_name=file('diffusion_models',n),weight_dtype='default'))
-     if mode in ('turbo','t2v-turbo'):m=g.add('LoraLoaderModelOnly',dict(model=m,lora_name=file('loras',n),strength_model=1.0))
-     models.append(g.add('ModelSamplingSD3',dict(model=m,shift=8.0 if mode in ('standard','remix','t2v') else 5.0)))
-    if mode in ('standard','remix','t2v'):
+    if mode in ('turbo','t2v-turbo'):
+     # Three-stage LightX2V schedule (8 steps, shift 8, Euler/simple). Stage 1 runs the
+     # high-noise expert WITHOUT the speed LoRA at CFG 3.5 for two steps, so the
+     # coarse motion is set by the base model with real guidance; stages 2-3 finish
+     # with the matched high/low LoRAs at CFG 1. GPU A/B on the drawing-room I2V test:
+     # LoRA-only turbo moved ~60% as much as standard (the "slow motion" look),
+     # this schedule ~94%, at 47 s vs 25 s turbo / 176 s standard (RTX PRO 6000).
+     high=g.add('UNETLoader',dict(unet_name=file('diffusion_models','high'),weight_dtype='default'))
+     low=g.add('UNETLoader',dict(unet_name=file('diffusion_models','low'),weight_dtype='default'))
+     high_base=g.add('ModelSamplingSD3',dict(model=high,shift=8.0))
+     high_fast=g.add('ModelSamplingSD3',dict(model=g.add('LoraLoaderModelOnly',dict(model=high,lora_name=file('loras','high'),strength_model=1.0)),shift=8.0))
+     low_fast=g.add('ModelSamplingSD3',dict(model=g.add('LoraLoaderModelOnly',dict(model=low,lora_name=file('loras','low'),strength_model=1.0)),shift=8.0))
+     stages=[(high_base,0,2,3.5),(high_fast,2,4,1.0),(low_fast,4,8,1.0)];latent=initial
+     for i,(m,start,end,cfg) in enumerate(stages):
+      last=i==len(stages)-1
+      latent=g.add('KSamplerAdvanced',dict(model=m,add_noise='enable' if i==0 else 'disable',noise_seed=seed,steps=8,cfg=cfg,sampler_name='euler',scheduler='simple',positive=positive,negative=negative,latent_image=latent,start_at_step=start,end_at_step=end,return_with_leftover_noise='disable' if last else 'enable'))
+    else:
+     models=[]
+     for n in ['high','low']:
+      m=g.add('UNETLoader',dict(unet_name=file('diffusion_models',n),weight_dtype='default'))
+      models.append(g.add('ModelSamplingSD3',dict(model=m,shift=8.0)))
      # Remix already contains Lightning. Use the publisher example
      # 12-step / split-10 schedule as an experimental starting point.
      steps=20 if mode in ('standard','t2v') else 12;split=10;cfg=3.5 if mode in ('standard','t2v') else 1.0
      latent=initial
      for i,m in enumerate(models):
       latent=g.add('KSamplerAdvanced',dict(model=m,add_noise='enable' if i==0 else 'disable',noise_seed=seed,steps=steps,cfg=cfg,sampler_name='euler',scheduler='simple',positive=positive,negative=negative,latent_image=latent,start_at_step=0 if i==0 else split,end_at_step=split if i==0 else steps,return_with_leftover_noise='enable' if i==0 else 'disable'))
-    else:
-     sig=g.add('ACDEVWanTurboSigmas',{});split=g.add('SplitSigmas',dict(sigmas=sig,step=2));sampler=g.add('KSamplerSelect',dict(sampler_name='euler'));noise=g.add('RandomNoise',dict(noise_seed=seed));latent=initial
-     for i,m in enumerate(models):
-      guide=g.add('CFGGuider',dict(model=m,positive=positive,negative=negative,cfg=1.0))
-      if i:noise=g.add('DisableNoise',{})
-      latent=g.add('SamplerCustomAdvanced',dict(noise=noise,guider=guide,sampler=sampler,sigmas=slot(split,i),latent_image=latent))
    else:
     cond=g.add('MiniMaxH3ImageToVideo',dict(clip=clip,vae=vae,prompt=slot(ctrl,4),width=ctrl,height=slot(ctrl,1),length=slot(ctrl,2),**({'first_frame':image} if image else {})))
     m=g.add('UNETLoader',dict(unet_name=file('diffusion_models'),weight_dtype='default'))
